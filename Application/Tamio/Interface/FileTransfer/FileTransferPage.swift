@@ -255,6 +255,9 @@ private struct BrowserPane: View {
     @State private var problem: String?
     /// Holds the keyboard for ⌘V.
     @FocusState private var focused: Bool
+    /// The path being typed over the breadcrumbs; nil while the crumbs show.
+    @State private var editingPath: String?
+    @FocusState private var pathFocused: Bool
     @ObservedObject private var directories = TerminalDirectories.shared
 
     enum Prompt: Identifiable {
@@ -342,7 +345,11 @@ private struct BrowserPane: View {
                 Button("Copy \(model.selection.count) to \(target.title)") { copy(selected, to: peer, folder: target.path) }
             }
             Divider()
-            Button("Go to Folder…") { ask(String(localized: "Go to folder"), value: browser.path) { browser.open($0) } }
+            Button("Go to Folder…") {
+                ask(String(localized: "Go to folder"), value: browser.path) { entered in
+                    Task { browser.open(await browser.resolve(entered)) }
+                }
+            }
             if let machine = browser.machine, let folder = directories.latest[machine.id]?.path {
                 Button("Go to Terminal's Folder") { browser.open(folder) }
                     .help(folder)
@@ -377,41 +384,81 @@ private struct BrowserPane: View {
         HStack(spacing: RX.Space.s1) {
             navButton("Back", "chevron.left", disabled: browser.back.isEmpty) { browser.goBack() }
             navButton("Forward", "chevron.right", disabled: browser.forward.isEmpty) { browser.goForward() }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 2) {
-                    ForEach(Array(crumbs.enumerated()), id: \.offset) { index, crumb in
-                        if index > 0 {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.rxInkTertiary)
-                        }
-                        Button {
-                            browser.open(crumb.path)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "folder.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color(red: 0.42, green: 0.71, blue: 0.96))
-                                Text(verbatim: crumb.name)
-                                    .font(.rxBody)
-                                    .foregroundStyle(.rxInk)
-                                    .fixedSize()
+            if editingPath != nil {
+                pathField
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        ForEach(Array(crumbs.enumerated()), id: \.offset) { index, crumb in
+                            if index > 0 {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.rxInkTertiary)
                             }
-                            .padding(.horizontal, 5)
-                            .frame(height: 24)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(hoveredFolder == crumb.path ? Color.rxAccentFill : .clear))
-                        }
-                        .buttonStyle(.plain)
-                        .onDrop(of: Self.dropTypes, isTargeted: Binding(get: { hoveredFolder == crumb.path }, set: { hoveredFolder = $0 ? crumb.path : nil })) { providers in
-                            receive(providers, into: crumb.path)
+                            Button {
+                                browser.open(crumb.path)
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "folder.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(Color(red: 0.42, green: 0.71, blue: 0.96))
+                                    Text(verbatim: crumb.name)
+                                        .font(.rxBody)
+                                        .foregroundStyle(.rxInk)
+                                        .fixedSize()
+                                }
+                                .padding(.horizontal, 5)
+                                .frame(height: 24)
+                                .background(RoundedRectangle(cornerRadius: 6).fill(hoveredFolder == crumb.path ? Color.rxAccentFill : .clear))
+                            }
+                            .buttonStyle(.plain)
+                            .onDrop(of: Self.dropTypes, isTargeted: Binding(get: { hoveredFolder == crumb.path }, set: { hoveredFolder = $0 ? crumb.path : nil })) { providers in
+                                receive(providers, into: crumb.path)
+                            }
                         }
                     }
                 }
+                .defaultScrollAnchor(.trailing)
             }
-            .defaultScrollAnchor(.trailing)
+            navButton(editingPath == nil ? "Edit Path" : "Cancel", "pencil", disabled: false) {
+                if editingPath == nil {
+                    editingPath = browser.path
+                } else {
+                    editingPath = nil
+                }
+            }
         }
         .padding(.horizontal, RX.Space.s2)
         .frame(height: 34)
+    }
+
+    /// Typing a path over the breadcrumbs: Return goes there, Esc puts the
+    /// crumbs back.
+    var pathField: some View {
+        TextField("Path", text: Binding(
+            get: { editingPath ?? browser.path },
+            set: { editingPath = $0 }
+        ))
+        .textFieldStyle(.plain)
+        .font(.rxCode)
+        .foregroundStyle(.rxInk)
+        .focused($pathFocused)
+        .onAppear { pathFocused = true }
+        .onSubmit(commitEditingPath)
+        .onExitCommand { editingPath = nil }
+        .padding(.horizontal, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 24)
+        .background(RoundedRectangle(cornerRadius: 6).fill(Color.rxAccentFill))
+    }
+
+    func commitEditingPath() {
+        guard let entered = editingPath?.trimmingCharacters(in: .whitespacesAndNewlines), !entered.isEmpty else {
+            editingPath = nil
+            return
+        }
+        editingPath = nil
+        Task { browser.open(await browser.resolve(entered)) }
     }
 
     var crumbs: [(name: String, path: String)] {

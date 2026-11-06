@@ -4081,6 +4081,22 @@
         }
       }
     },
+    "Edit Path": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Path"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑路径"
+          }
+        }
+      }
+    },
     "Edit Port Forward": {
       "localizations": {
         "en": {

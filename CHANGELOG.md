@@ -13,6 +13,13 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Added
+- **The file panel's path bar takes a typed address.** The pencil beside the
+  breadcrumbs turns the path bar into a text field: Return goes there, Esc
+  puts the crumbs back. A relative path goes against the folder on show, and
+  a leading `~` is home — on a server, that server's own home, which Go to
+  Folder now honours as well.
+
 ### Changed
 - **⌘W moves to the server's next open page instead of leaving it.** Closing
   the monitor lands on Files, closing Files lands on the terminal, and a

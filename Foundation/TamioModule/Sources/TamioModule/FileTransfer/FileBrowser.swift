@@ -140,6 +140,17 @@ public class FileBrowser: ObservableObject, Identifiable {
     public func child(_ name: String) -> String {
         (path as NSString).appendingPathComponent(name)
     }
+
+    /// Where a path the user typed goes: a relative one is against the
+    /// folder on show, and a leading `~` is home. Overridden by the remote
+    /// browser, whose home only the server can name.
+    public func resolve(_ entered: String) async -> String {
+        var target = entered
+        if !target.hasPrefix("/"), target != "~", !target.hasPrefix("~/") {
+            target = child(target)
+        }
+        return Self.normalize(target)
+    }
 }
 
 public struct FileBrowserError: Error, Sendable {
@@ -252,6 +263,14 @@ public final class RemoteBrowser: FileBrowser {
     /// names another start folder.
     override func startingPath() async -> String? {
         guard server.startsInHomeFolder else { return nil }
+        return await homePath()
+    }
+
+    /// The home of the user Tamio signs in as, asked of the shell once.
+    private var home: String?
+
+    private func homePath() async -> String? {
+        if let home { return home }
         let result = await onShell { shell -> String in
             var output = ""
             let lock = NSLock()
@@ -272,7 +291,22 @@ public final class RemoteBrowser: FileBrowser {
         }
         guard case let .success(output) = result else { return nil }
         let home = output.trimmingCharacters(in: .whitespacesAndNewlines)
-        return home.hasPrefix("/") ? home : nil
+        guard home.hasPrefix("/") else { return nil }
+        self.home = home
+        return home
+    }
+
+    /// A relative path goes against the folder on show; `~` is the server's
+    /// own home, which only the server can name.
+    override public func resolve(_ entered: String) async -> String {
+        var target = entered
+        if target == "~" || target.hasPrefix("~/") {
+            guard let home = await homePath() else { return entered }
+            target = home + target.dropFirst()
+        } else if !target.hasPrefix("/") {
+            target = child(target)
+        }
+        return Self.normalize(target)
     }
 
     override public var title: String { server.name }
