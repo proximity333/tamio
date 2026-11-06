@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.19] - 2026-11-06
+
 ### Added
 - **Tamio tells you when it blocks a program's copy to the clipboard.** A
   program in the terminal, such as tmux or Neovim on a server, can ask to copy
@@ -23,6 +25,18 @@ the user. To release, rename that heading to the version and date
   keeps it away for 30 seconds. **Let programs copy to the clipboard**, under
   Settings › Mouse & Clipboard, allows every copy; it is off unless you turn
   it on. Programs still can never read the clipboard.
+
+### Changed
+- **⌘W closes the session in view instead of the window.** The File menu's
+  Close command is gone, so ⌘W no longer takes the window away from under a
+  terminal; it closes the terminal, files or monitor page on show. Quit stays
+  on ⌘Q.
+
+### Fixed
+- **Drag and drop works between the file panes again.** On recent macOS,
+  SwiftUI hands the drop site item providers with no types in them, so a
+  drop on a pane did nothing. The pane now reads the drag pasteboard
+  directly when that happens, and a drop from Finder uploads just the same.
 
 ## [0.2.18] - 2026-11-05
 
