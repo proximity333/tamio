@@ -12,7 +12,11 @@
 #
 # The Mac app is signed with the keychain's Developer ID Application
 # certificate, with the hardened runtime and a secure timestamp, then the disk
-# image is sent to Apple's notary service and the ticket stapled to it.
+# image is sent to Apple's notary service and the ticket stapled to it. With
+# CODE_SIGN_IDENTITY naming a self-signed code signing certificate instead, it
+# signs with that and skips the runtime flag, the timestamp and the notary
+# service: nothing a certificate without a team ID can carry. Its signature
+# stays the same across releases, which keeps macOS's permission grants.
 #
 # Notary credentials, the first that is set:
 #   NOTARY_KEYCHAIN_PROFILE              a profile saved with
@@ -101,6 +105,10 @@ release_mac() {
             | openssl x509 -noout -subject -nameopt multiline \
             | sed -n 's/^ *organizationalUnitName *= *//p' | head -1)"
     fi
+    # Only a Developer ID certificate carries a team ID; a self-signed one
+    # signs like ad hoc does, minus the resetting permission grants.
+    local developer_id=false
+    [[ "$identity" == "Developer ID Application:"* ]] && developer_id=true
 
     step "Mac: building ($identity)"
     CODE_SIGN_IDENTITY="$identity" DERIVED_DATA_PATH="$DERIVED_DATA_PATH" \
@@ -126,14 +134,14 @@ release_mac() {
     local entitlements="$OUTPUT_DIR/mac-entitlements.plist"
     /usr/bin/codesign -d --entitlements - --xml "$built" 2>/dev/null > "$entitlements"
     /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.get-task-allow' "$entitlements" 2>/dev/null || true
-    local timestamp=(--timestamp)
-    [[ "$identity" == "-" ]] && timestamp=(--timestamp=none)
-    # Hardened runtime turns library validation on, and an ad hoc signature
-    # has no team ID to satisfy it with: the app would refuse its own Sparkle
-    # at launch. The runtime flag is only needed for notarization, which an
-    # ad hoc build skips anyway.
-    local options=(--options runtime)
-    [[ "$identity" == "-" ]] && options=()
+    local timestamp=(--timestamp=none)
+    "$developer_id" && timestamp=(--timestamp)
+    # Hardened runtime turns library validation on, and a signature with no
+    # team ID to satisfy it with would make the app refuse its own Sparkle
+    # at launch. The runtime flag is only needed for notarization, which
+    # only a Developer ID release goes through.
+    local options=()
+    "$developer_id" && options=(--options runtime)
     # Sparkle, in the app's Frameworks, carries helpers of its own
     # (Autoupdate, Updater.app, XPC services); -depth signs them before the
     # framework that holds them, keeping the entitlements they come with.
@@ -155,7 +163,9 @@ release_mac() {
     if [[ "$identity" == "-" ]]; then
         printf 'Signed ad hoc: %s will not open on another Mac.\n' "$(basename "$image")"
     else
-        /usr/bin/codesign --force --sign "$identity" --timestamp "$image"
+        local image_timestamp=(--timestamp=none)
+        "$developer_id" && image_timestamp=(--timestamp)
+        /usr/bin/codesign --force --sign "$identity" ${image_timestamp[@]+"${image_timestamp[@]}"} "$image"
         notarize "$image"
     fi
     rm -rf "$stage" "$entitlements"
