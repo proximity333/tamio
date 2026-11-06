@@ -13,6 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **⌘W moves to the server's next open page instead of leaving it.** Closing
+  the monitor lands on Files, closing Files lands on the terminal, and a
+  closed page is replaced by its nearest neighbour still open. When it is the
+  server's last open page, ⌘W closes the whole session as before.
+- **⌘W closes a live session without asking.** The confirmation that asked
+  whether to close the session stays for the sidebar menus, where the click
+  is less deliberate; ⌘W already is the user saying close.
+
 ## [0.2.19] - 2026-11-06
 
 ### Added

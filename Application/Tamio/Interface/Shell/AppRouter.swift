@@ -245,14 +245,18 @@ final class AppRouter: ObservableObject {
         }
     }
 
-    /// Closes the session the page shows now: ⌘W in the File menu. Nothing
-    /// to close on the other pages.
+    /// Closes the page the window shows now: ⌘W. Another open page of the
+    /// same server takes its place — the neighbour before it, else the next
+    /// one — and closing the last one leaves the server. Nothing to close on
+    /// the other pages.
     @MainActor
     func closeCurrentSession() {
+        guard let owner = owner(of: route), let index = routes(of: owner).firstIndex(of: route) else { return }
+        let order = routes(of: owner)
         switch route {
         case let .terminal(id):
             if let context = TerminalManager.shared.sessionContexts.first(where: { $0.id == id }) {
-                TerminalSessionActions.close(context)
+                TerminalSessionActions.close(context, confirm: false)
             }
         case let .transfer(id):
             if let context = FileTransferManager.shared.transfers.first(where: { $0.id == id }) {
@@ -261,8 +265,15 @@ final class AppRouter: ObservableObject {
         case let .monitor(id):
             MonitorCenter.shared.end(id)
         default:
-            break
+            return
         }
+        // A pending confirmation keeps the page open, so there is nothing to
+        // move to yet.
+        let remaining = routes(of: owner)
+        guard !remaining.contains(order[index]) else { return }
+        let before = order[..<index].last { remaining.contains($0) }
+        let after = order[(index + 1)...].first { remaining.contains($0) }
+        if let neighbour = before ?? after { route = neighbour }
     }
 
     /// Closes every session of a server or Quick Connect terminal.

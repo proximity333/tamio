@@ -178,10 +178,12 @@ private struct TerminalStatusBar: View {
 }
 
 enum TerminalSessionActions {
+    /// `confirm: false` closes a live session right away, for ⌘W, which
+    /// already is the user saying close.
     @MainActor
-    static func close(_ context: TerminalManager.Context) {
+    static func close(_ context: TerminalManager.Context, confirm: Bool = true) {
         let manager = TerminalManager.shared
-        if manager.sessionAlive(forContext: context.id) {
+        if confirm, manager.sessionAlive(forContext: context.id) {
             Dialogs.requiresConfirmation(
                 message: String(localized: "Close the session on \(context.displayName)?"),
                 confirmTitle: String(localized: "Close Session"),
