@@ -11,6 +11,21 @@ the user. To release, rename that heading to the version and date
 (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
 `v0.2.0`.
 
+## [0.2.21] - 2026-11-06
+
+### Fixed
+- **An update keeps the permissions you gave it.** Releases were signed ad
+  hoc, so macOS saw every update as a different program and asked for the
+  Desktop, Documents and the like again. Releases carry the repository's own
+  signing certificate now, whose signature stays the same across versions, so
+  what you granted once stays granted. The certificate is not Apple's: the
+  release is not notarized, and the first launch of a downloaded copy still
+  wants `xattr -cr` (or a right-click → Open) once.
+- **Updates come from this repository.** The app read the upstream project's
+  release feed, so a release here never reached installed copies — and the
+  update signature check, pinned to the upstream's key, would have refused
+  them anyway. The feed and the key are this repository's own now.
+
 ## [0.2.20] - 2026-11-06
 
 ### Added
