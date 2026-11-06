@@ -11,7 +11,7 @@ the user. To release, rename that heading to the version and date
 (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
 `v0.2.0`.
 
-## [Unreleased]
+## [0.2.20] - 2026-11-06
 
 ### Added
 - **The file panel's path bar takes a typed address.** The pencil beside the
