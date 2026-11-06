@@ -21,6 +21,9 @@ struct SidebarView: View {
     @ObservedObject var monitors = MonitorCenter.shared
     @ObservedObject var transfers = FileTransferManager.shared
 
+    /// TEMP: the Servers entry in the Manage group is hidden for now.
+    private static let showsServersEntry = false
+
     /// A place (Home, Servers…) or a server with open sessions. Selecting a
     /// server shows the tool it showed last; the toolbar switcher changes tools.
     enum Item: Hashable {
@@ -63,7 +66,10 @@ struct SidebarView: View {
                 place(.home, "Home", systemImage: "house")
 
                 SidebarHeader("Manage")
-                place(.servers, "Servers", systemImage: "server.rack", badge: store.machineGroup.count)
+                // TEMP: the Servers entry is hidden for now; flip this back to show it.
+                if Self.showsServersEntry {
+                    place(.servers, "Servers", systemImage: "server.rack", badge: store.machineGroup.count)
+                }
                 place(.identities, "Identities", systemImage: "person.badge.key", badge: store.identityGroup.shared.count)
                 place(.snippets, "Snippets", systemImage: "chevron.left.forwardslash.chevron.right", badge: store.snippetGroup.count)
                 place(.portForward, "Port Forward", systemImage: "arrow.left.arrow.right", badge: store.portForwardGroup.count)
