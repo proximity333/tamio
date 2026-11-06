@@ -698,6 +698,24 @@ private struct BrowserPane: View {
 
     func receive(_ providers: [NSItemProvider], into folder: String) -> Bool {
         let model = model
+        // SwiftUI on macOS can perform the drop with providers that carry no
+        // type identifiers (or none at all), even though the drag pasteboard
+        // carries the data. Read it back directly: the payload for a drag from
+        // this app, file URLs for one from Finder.
+        if providers.isEmpty || providers.allSatisfy({ $0.registeredTypeIdentifiers.isEmpty }) {
+            let drag = NSPasteboard(name: .drag)
+            if let data = drag.data(forType: NSPasteboard.PasteboardType(FileDragPayload.type.identifier)),
+               let payload = try? JSONDecoder().decode(FileDragPayload.self, from: data) {
+                Task { @MainActor in arrive(payload, into: folder, model: model) }
+                return true
+            }
+            if let urls = drag.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+               !urls.isEmpty {
+                Task { @MainActor in arrive(FileDragPayload(machine: nil, paths: urls.map(\.path)), into: folder, model: model) }
+                return true
+            }
+            return false
+        }
         if let tamio = providers.first(where: { $0.hasItemConformingToTypeIdentifier(FileDragPayload.type.identifier) }) {
             tamio.loadDataRepresentation(forTypeIdentifier: FileDragPayload.type.identifier) { data, _ in
                 guard let data, let payload = try? JSONDecoder().decode(FileDragPayload.self, from: data) else { return }

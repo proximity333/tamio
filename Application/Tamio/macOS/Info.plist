@@ -4,6 +4,22 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- The payload of a drag between the file panes (FileDragPayload.type):
+	     declaring it lets SwiftUI map the drag pasteboard's types back to
+	     item providers when a pane takes a drop. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>sb.moe.tamio.file-selection</string>
+			<key>UTTypeDescription</key>
+			<string>Tamio file selection</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
