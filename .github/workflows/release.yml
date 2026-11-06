@@ -4,6 +4,10 @@
 # The app's feed is the latest release's appcast.xml, so installed copies see
 # the new version as soon as the run ends. Signing happens only here.
 #
+# Without the signing secrets, a tag is still built and published, ad hoc
+# signed: the release notes tell the user how macOS lets it open. Sparkle
+# updates need the EdDSA key, so the appcast then lists the update unsigned.
+#
 # Run by hand (Actions → Release → Run workflow) it only builds, and keeps the
 # products as artifacts of the run; without the secrets the Mac app is then
 # signed ad hoc, which is enough to see that the build works.
@@ -69,11 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "$DEVELOPER_ID_P12" ]]; then
-            if [[ "$IS_TAG" == true ]]; then
-              echo "::error::No signing certificate in the repository's secrets; a release is not published unsigned. Run Workflow/Scripts/release-secrets.sh."
-              exit 1
-            fi
-            echo "::warning::No signing certificate: the Mac app is signed ad hoc."
+            echo "::warning::No signing certificate in the repository's secrets: the Mac app is signed ad hoc, and users must clear the download's quarantine to open it."
             echo "CODE_SIGN_IDENTITY=-" >> "$GITHUB_ENV"
             exit 0
           fi
@@ -126,11 +126,12 @@ jobs:
             } >> "$GITHUB_ENV"
           elif [[ -n "$NOTARY_APPLE_ID" ]]; then
             echo "NOTARY_APPLE_ID=$NOTARY_APPLE_ID" >> "$GITHUB_ENV"
-          elif [[ "$IS_TAG" == true ]]; then
-            echo "::error::No notary credentials in the repository's secrets. Run Workflow/Scripts/release-secrets.sh."
-            exit 1
+          else
+            echo "::warning::No notary credentials in the repository's secrets: the release is not notarized."
           fi
-          [[ "$IS_TAG" == true ]] && echo "REQUIRE_NOTARIZATION=1" >> "$GITHUB_ENV" || true
+          if [[ -n "$NOTARY_KEY" || -n "$ASC_API_KEY_P8" || -n "$NOTARY_APPLE_ID" ]] && [[ "$IS_TAG" == true ]]; then
+            echo "REQUIRE_NOTARIZATION=1" >> "$GITHUB_ENV"
+          fi
 
       - name: Build the Mac disk image
         env:
@@ -157,15 +158,15 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
-            echo "::error::No SPARKLE_PRIVATE_KEY in the repository's secrets: the update could not be signed."
-            exit 1
-          fi
-          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
-          SPARKLE_KEY_FILE="$RUNNER_TEMP/sparkle.key" \
+          if [[ -n "$SPARKLE_PRIVATE_KEY" ]]; then
+            printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
+            SPARKLE_KEY_FILE="$RUNNER_TEMP/sparkle.key" \
+              bash Workflow/Scripts/appcast.sh DerivedData/Release/Tamio-*.dmg "$GITHUB_REF_NAME" \
+              > DerivedData/Release/appcast.xml
+          else
             bash Workflow/Scripts/appcast.sh DerivedData/Release/Tamio-*.dmg "$GITHUB_REF_NAME" \
-            > DerivedData/Release/appcast.xml
+              > DerivedData/Release/appcast.xml
+          fi
           cat DerivedData/Release/appcast.xml
 
       - name: Publish the release
@@ -174,12 +175,32 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           bash Workflow/Scripts/release-notes.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+          # An ad hoc build carries no Developer ID signature or notarization:
+          # tell the user how macOS lets it open, once, in its own notes.
+          if [[ "${CODE_SIGN_IDENTITY:-}" == "-" ]]; then
+            {
+              echo
+              echo "## 打开未签名版本"
+              echo
+              echo "这个 DMG 里的应用没有 Developer ID 签名，也没有经过 Apple 公证。下载解压拖入 Applications 后，首次打开会被 macOS 拦下。在终端运行一次："
+              echo
+              echo '```'
+              echo "xattr -cr /Applications/Tamio.app"
+              echo '```'
+              echo
+              echo "之后即可正常打开。"
+            } >> "$RUNNER_TEMP/notes.md"
+          fi
           gh release create "$GITHUB_REF_NAME" \
             DerivedData/Release/Tamio-*.dmg DerivedData/Release/appcast.xml \
             --latest --title "Tamio ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
           {
             echo "### Released"
-            echo "Tamio ${GITHUB_REF_NAME#v} is built, notarized, signed and published as the latest release."
+            if [[ "${CODE_SIGN_IDENTITY:-}" == "-" ]]; then
+              echo "Tamio ${GITHUB_REF_NAME#v} is built ad hoc (unsigned) and published as the latest release."
+            else
+              echo "Tamio ${GITHUB_REF_NAME#v} is built, notarized, signed and published as the latest release."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove the signing keychain

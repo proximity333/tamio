@@ -8,7 +8,9 @@
 # Usage: bash Workflow/Scripts/appcast.sh <Tamio-x.y.z.dmg> <tag> > appcast.xml
 #
 # The key is read from SPARKLE_KEY_FILE (a file holding the private key, as
-# the SPARKLE_PRIVATE_KEY secret does).
+# the SPARKLE_PRIVATE_KEY secret does). With no key given, the appcast lists
+# the update without the EdDSA signature: Sparkle running in installed copies
+# refuses such an update, but the release and its notes still stand.
 #
 # The update window shows the version's notes: its section of CHANGELOG.md
 # (release-notes.sh) as HTML, which Sparkle shows in a web view. cmark, the
@@ -21,7 +23,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 IMAGE="$1"
 TAG="$2"
 REPO="${GITHUB_REPOSITORY:-missuo/tamio}"
-: "${SPARKLE_KEY_FILE:?SPARKLE_KEY_FILE names the private key file}"
+SPARKLE_KEY_FILE="${SPARKLE_KEY_FILE:-}"
 
 bash "$ROOT_DIR/Workflow/Scripts/sparkle.sh" >&2
 
@@ -35,9 +37,15 @@ minimum="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$plist" 2
 hdiutil detach "$mount" -quiet
 rmdir "$mount"
 
-# Prints: sparkle:edSignature="…" length="…"
-attributes="$("$ROOT_DIR/External/Sparkle/bin/sign_update" --ed-key-file "$SPARKLE_KEY_FILE" "$IMAGE")"
-[[ "$attributes" == *edSignature=* ]] || { printf 'sign_update failed.\n' >&2; exit 1; }
+# Prints: sparkle:edSignature="…" length="…" — or nothing, when no key was
+# given and the update is listed unsigned.
+attributes=""
+if [[ -n "$SPARKLE_KEY_FILE" ]]; then
+    attributes="$("$ROOT_DIR/External/Sparkle/bin/sign_update" --ed-key-file "$SPARKLE_KEY_FILE" "$IMAGE")"
+    [[ "$attributes" == *edSignature=* ]] || { printf 'sign_update failed.\n' >&2; exit 1; }
+else
+    printf 'No SPARKLE_KEY_FILE: listing the update without an EdDSA signature.\n' >&2
+fi
 
 command -v cmark >/dev/null || brew install cmark >&2
 notes="$(bash "$ROOT_DIR/Workflow/Scripts/release-notes.sh" "$short" | cmark)"
