@@ -245,6 +245,26 @@ final class AppRouter: ObservableObject {
         }
     }
 
+    /// Closes the session the page shows now: ⌘W in the File menu. Nothing
+    /// to close on the other pages.
+    @MainActor
+    func closeCurrentSession() {
+        switch route {
+        case let .terminal(id):
+            if let context = TerminalManager.shared.sessionContexts.first(where: { $0.id == id }) {
+                TerminalSessionActions.close(context)
+            }
+        case let .transfer(id):
+            if let context = FileTransferManager.shared.transfers.first(where: { $0.id == id }) {
+                FileTransferSessionActions.close(context)
+            }
+        case let .monitor(id):
+            MonitorCenter.shared.end(id)
+        default:
+            break
+        }
+    }
+
     /// Closes every session of a server or Quick Connect terminal.
     @MainActor
     func closeAll(_ owner: SessionOwner) {

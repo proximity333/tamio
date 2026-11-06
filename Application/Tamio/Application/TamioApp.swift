@@ -176,6 +176,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AppearancePreference.applyStored()
         Mac.mayTerminate = { AppDelegate.shared.mayTerminate() }
         Mac.openApp = { MainWindow.show() }
+        hideCloseWindowCommand()
+        watchMenuRebuilds()
+        interceptCommandW()
         observeWindows()
         MenubarTool.shared.restore()
         #if DEBUG
@@ -266,6 +269,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - Window lifecycle and background residency
+
+    /// Removes the File menu's Close commands so ⌘W cannot close the main
+    /// window: with the window gone the app lives in the background, which
+    /// reads as if Tamio had quit. Quit stays on ⌘Q, and the window comes
+    /// back from the Dock, the menu bar item and ⌘0.
+    private func hideCloseWindowCommand() {
+        for submenu in NSApp.mainMenu?.items.compactMap(\.submenu) ?? [] {
+            // Snapshot: the items cannot be removed while they are being listed.
+            for item in Array(submenu.items) where item.action == #selector(NSWindow.performClose(_:)) {
+                submenu.removeItem(item)
+            }
+        }
+    }
+
+    /// SwiftUI rebuilds the menu bar as its commands change, which puts the
+    /// system Close commands back. Strip them again each time a menu is about
+    /// to open, so the File menu never shows a Close.
+    private func watchMenuRebuilds() {
+        NotificationCenter.default.addObserver(
+            forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.hideCloseWindowCommand()
+        }
+    }
+
+    private var commandWMonitor: Any?
+
+    /// ⌘W closes the session in view. The monitor answers key events before
+    /// the menu's key equivalents, so however often SwiftUI restores its Close
+    /// command, ⌘W keeps closing the terminal, files or monitor page and can
+    /// never close the window.
+    private func interceptCommandW() {
+        commandWMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+                  event.charactersIgnoringModifiers == "w"
+            else { return event }
+            MainActor.assumeIsolated {
+                AppRouter.shared.closeCurrentSession()
+            }
+            return nil
+        }
+    }
 
     private func observeWindows() {
         let center = NotificationCenter.default
