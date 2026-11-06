@@ -128,16 +128,22 @@ release_mac() {
     /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.get-task-allow' "$entitlements" 2>/dev/null || true
     local timestamp=(--timestamp)
     [[ "$identity" == "-" ]] && timestamp=(--timestamp=none)
+    # Hardened runtime turns library validation on, and an ad hoc signature
+    # has no team ID to satisfy it with: the app would refuse its own Sparkle
+    # at launch. The runtime flag is only needed for notarization, which an
+    # ad hoc build skips anyway.
+    local options=(--options runtime)
+    [[ "$identity" == "-" ]] && options=()
     # Sparkle, in the app's Frameworks, carries helpers of its own
     # (Autoupdate, Updater.app, XPC services); -depth signs them before the
     # framework that holds them, keeping the entitlements they come with.
     find "$app/Contents" -depth \( -name '*.framework' -o -name '*.dylib' -o -name '*.appex' -o -name '*.xpc' \
         -o -name '*.app' -o -path '*/Sparkle.framework/Versions/*/Autoupdate' -o -path '*/PlugIns/*.bundle' \) -print0 \
         | while IFS= read -r -d '' nested; do
-            /usr/bin/codesign --force --sign "$identity" --options runtime "${timestamp[@]}" \
+            /usr/bin/codesign --force --sign "$identity" ${options[@]+"${options[@]}"} "${timestamp[@]}" \
                 --preserve-metadata=entitlements "$nested"
         done
-    /usr/bin/codesign --force --sign "$identity" --options runtime "${timestamp[@]}" \
+    /usr/bin/codesign --force --sign "$identity" ${options[@]+"${options[@]}"} "${timestamp[@]}" \
         --entitlements "$entitlements" "$app"
     /usr/bin/codesign --verify --deep --strict --all-architectures "$app"
 
