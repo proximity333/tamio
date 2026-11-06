@@ -32,9 +32,9 @@
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://github.com/missuo/tamio/releases/latest/download/appcast.xml</string>
+	<string>https://github.com/proximity333/tamio/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>FGnM3UVskuCdONiYX+6KbArkar0D5lYS73IeqOmWrps=</string>
+	<string>bU7seR9RVL8P7VcP90Xr2S/RomcyxOd0+39o793Cyoc=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 </dict>
