@@ -178,7 +178,7 @@ enum MainWindow {
 }
 
 @MainActor
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     /// Set once at launch on the main thread; read there ever after.
     @MainActor private(set) static var shared: AppDelegate!
     private var cancellables = Set<AnyCancellable>()
@@ -194,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AppearancePreference.applyStored()
         Mac.mayTerminate = { AppDelegate.shared.mayTerminate() }
         Mac.openApp = { MainWindow.show() }
-        hideCloseWindowCommand()
+        reconcileFileMenuClose()
         watchMenuRebuilds()
         interceptCommandW()
         observeWindows()
@@ -254,7 +254,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_: Notification) {
-        menuSweep?.invalidate()
+        if let menuObserver {
+            CFRunLoopRemoveObserver(CFRunLoopGetMain(), menuObserver, .commonModes)
+        }
         AgentSocket.shared.stop()
     }
 
@@ -289,47 +291,58 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Window lifecycle and background residency
 
-    /// Removes the File menu's Close commands so ⌘W cannot close the main
-    /// window: with the window gone the app lives in the background, which
-    /// reads as if Tamio had quit. Quit stays on ⌘Q, and the window comes
-    /// back from the Dock, the menu bar item and ⌘0. Close All goes too:
-    /// it closes windows just the same.
-    private func hideCloseWindowCommand() {
+    /// SwiftUI puts Close in the File menu itself, and puts it back — with its
+    /// window-closing action — whenever its commands are rebuilt. Removing it
+    /// does not hold: SwiftUI repairs its menu within a second, over and over.
+    /// Its action is rewritten instead, to what ⌘W already does: close the
+    /// page in view, never the window, which would leave the app in the
+    /// background and read as a quit. The title and ⌘W stay the system's;
+    /// rewriting is idempotent, so a rebuild costs one pass and changes
+    /// nothing when the item is already ours.
+    private func reconcileFileMenuClose() {
         for submenu in NSApp.mainMenu?.items.compactMap(\.submenu) ?? [] {
-            // Snapshot: the items cannot be removed while they are being listed.
-            for item in Array(submenu.items)
-            where item.action == #selector(NSWindow.performClose(_:))
-                || item.action.map({ NSStringFromSelector($0) == "closeAll:" }) == true {
-                submenu.removeItem(item)
+            for item in submenu.items where item.action == #selector(NSWindow.performClose(_:)) {
+                if item.target !== self || item.action != #selector(closePageInView) {
+                    item.target = self
+                    item.action = #selector(closePageInView)
+                }
             }
         }
     }
 
-    /// SwiftUI rebuilds the menu bar as its commands change, which puts the
-    /// system Close commands back. macOS 26 and later open menus without
-    /// NSMenu's tracking notifications and without asking the menu's
-    /// delegate, so there is no moment to catch a rebuild; a short sweep is
-    /// the only hook that always runs. Scanning the menus is a handful of
-    /// items, and the tracking notification still does the work where it is
-    /// posted.
-    private func watchMenuRebuilds() {
-        NotificationCenter.default.addObserver(
-            forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.hideCloseWindowCommand()
-        }
-        NotificationCenter.default.addObserver(
-            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.hideCloseWindowCommand()
-        }
-        menuSweep = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            self?.hideCloseWindowCommand()
+    /// ⌘W's action, for the menu item that carries it.
+    @objc private func closePageInView(_: Any?) {
+        AppRouter.shared.closeCurrentSession()
+    }
+
+    /// AppKit asks the item's target whether it can act. Close has nothing
+    /// to do on Home, Servers and the other pages.
+    func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        switch item.action {
+        case #selector(closePageInView): AppRouter.shared.canCloseCurrentSession
+        default: true
         }
     }
 
+    /// SwiftUI rebuilds the menu bar as its commands change, with no
+    /// notification: macOS 26 and later open menus without NSMenu's tracking
+    /// notifications and without asking the menu's delegate. A runloop
+    /// observer runs the reconciliation on each pass of the main run loop,
+    /// right before it sleeps — so it runs as often as there is work and not
+    /// at all while the app is idle, unlike a timer waking the CPU.
+    private func watchMenuRebuilds() {
+        let observer = CFRunLoopObserverCreateWithHandler(
+            kCFAllocatorDefault, CFRunLoopActivity.beforeWaiting.rawValue, true, 0
+        ) { [weak self] _, _ in
+            self?.reconcileFileMenuClose()
+        }
+        guard let observer else { return }
+        CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
+        menuObserver = observer
+    }
+
     private var commandWMonitor: Any?
-    private var menuSweep: Timer?
+    private var menuObserver: CFRunLoopObserver?
 
     /// ⌘W closes the session in view. The monitor answers key events before
     /// the menu's key equivalents, so however often SwiftUI restores its Close

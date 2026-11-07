@@ -254,6 +254,12 @@ final class AppRouter: ObservableObject {
         }
     }
 
+    /// Whether ⌘W has a page to close now.
+    var canCloseCurrentSession: Bool {
+        guard let owner = owner(of: route) else { return false }
+        return routes(of: owner).contains(route)
+    }
+
     /// Closes the page the window shows now: ⌘W. Another open page of the
     /// same server takes its place — the neighbour before it, else the next
     /// one — and closing the last one leaves the server. Nothing to close on
