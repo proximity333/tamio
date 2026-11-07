@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.22] - 2026-11-07
+
 ### Added
 - **Frosted glass, on by default.** The whole window is see-through: your
   desktop's colour comes through the blur, under a light neutral tint that
