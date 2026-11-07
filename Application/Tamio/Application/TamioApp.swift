@@ -133,6 +133,13 @@ struct TamioCommands: Commands {
             .keyboardShortcut("5", modifiers: .command)
             Divider()
         }
+        // The File menu's Close would take the main window away, and its ⌘W
+        // competes with closing the session in view; replace the system Close
+        // commands with nothing. The AppKit stripping below stays as a backup
+        // for the times SwiftUI puts its defaults back.
+        CommandGroup(replacing: .close) {
+            EmptyView()
+        }
         CommandGroup(before: .windowList) {
             Button("Main Window") { MainWindow.show() }
                 .keyboardShortcut("0", modifiers: .command)
