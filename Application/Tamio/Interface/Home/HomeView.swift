@@ -2,9 +2,9 @@
 //  HomeView.swift
 //  Tamio (macOS)
 //
-//  Start page: every server's live status card in a dense grid, straight
-//  under the toolbar (a group switcher at the top left, search and New Server
-//  at the top right, no title row), and beside them the inspector of the card
+//  Start page: every server's live status card in a dense grid straight under
+//  the toolbar (the group switcher in its middle, New Server and search at its
+//  trailing end, no title row), and beside them the inspector of the card
 //  that is selected.
 //
 
@@ -28,9 +28,15 @@ struct HomeView: View {
                 },
                 trailingMetrics: .group,
                 search: ($search, "Search servers")
-            ) {
-                HomeGroupSwitcher()
-            } trailing: {}
+            ) {} trailing: {}
+            // The groups at the toolbar's leading edge, on the row of New and
+            // search, lined up with the cards.
+            .rxPlainToolbar {
+                ToolbarItem(placement: .navigation) {
+                    // Lined up with the cards, which start the page's margin in.
+                    AlignedWithContent(margin: RX.Space.s4) { HomeGroupSwitcher() }
+                }
+            }
     }
 }
 
@@ -60,6 +66,7 @@ private struct HomeContent: View {
                     .padding(.top, RX.Space.s1)
                     .padding(.bottom, RX.Space.s6)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .transformEnvironment(\.rxOpenWidth) { $0 -= RX.Space.s4 * 2 }
             }
             .frame(minWidth: StatusCardMetrics.minimumWidth + RX.Space.s4 * 2, maxWidth: .infinity)
             if let selection, store.machineGroup.machines.contains(where: { $0.id == selection }) {

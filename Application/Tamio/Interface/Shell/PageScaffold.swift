@@ -58,6 +58,7 @@ struct PageScaffold<Leading: View, Trailing: View, Header: View, Content: View>:
                     .padding(.top, RX.Space.s3)
                     .padding(.bottom, RX.Space.s6)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .transformEnvironment(\.rxOpenWidth) { $0 -= RX.Space.s6 * 2 }
                 }
             } else {
                 VStack(alignment: .leading, spacing: 0) {
@@ -70,6 +71,7 @@ struct PageScaffold<Leading: View, Trailing: View, Header: View, Content: View>:
                 .padding(.top, RX.Space.s3)
                 .padding(.bottom, RX.Space.s6)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .transformEnvironment(\.rxOpenWidth) { $0 -= RX.Space.s6 * 2 }
             }
         }
         .pageChrome()
@@ -146,7 +148,7 @@ private struct PageToolbar<Leading: View, Trailing: View>: ViewModifier {
     // identity would rebuild it (and its terminal view) on every switch.
     func body(content: Content) -> some View {
         content
-            .toolbar {
+            .rxPlainToolbar {
                 if isActive {
                     if hasLeading {
                         ToolbarItemGroup(placement: .navigation) { leading }
@@ -159,7 +161,9 @@ private struct PageToolbar<Leading: View, Trailing: View>: ViewModifier {
                     }
                     if let toolSwitch {
                         ToolbarItem(placement: .principal) {
-                            ServerToolSwitcher(machine: toolSwitch.machine, current: toolSwitch.current)
+                            CentredOverContent {
+                                ServerToolSwitcher(machine: toolSwitch.machine, current: toolSwitch.current)
+                            }
                         }
                         if #available(macOS 26.0, *) {
                             ToolbarSpacer(.flexible)
@@ -188,6 +192,24 @@ private struct PageToolbar<Leading: View, Trailing: View>: ViewModifier {
     static var searchWidth: CGFloat { 200 }
 }
 
+/// Centred over the content, not the window. The toolbar centres its middle
+/// item on the window, left of the content's middle by half the sidebar while
+/// the sidebar is open. The item keeps the sidebar's width to its leading side,
+/// which moves its middle that far; with the sidebar hidden what it shows moves
+/// back by half of it, within the item, so the toolbar is not laid out again
+/// as the sidebar slides and clicks land inside the item.
+private struct CentredOverContent<Content: View>: View {
+    @ObservedObject private var router = AppRouter.shared
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .offset(x: router.sidebarOpen ? 0 : -MainWindow.sidebarSpan / 2)
+            .animation(SidebarSlide.animation, value: router.sidebarOpen)
+            .padding(.leading, MainWindow.sidebarSpan)
+    }
+}
+
 /// How AppKit spaces the symbols of a toolbar group.
 struct ToolbarCapsuleMetrics {
     var spacing: CGFloat = 0
@@ -204,13 +226,17 @@ struct ToolbarCapsuleMetrics {
 
 /// A toolbar action: a symbol, with its title as the tooltip and accessibility
 /// label (HIG: prefer simple, recognizable symbols in toolbars). A page passes
-/// its primary action to the scaffold, which draws it tinted and apart.
+/// its primary action to the scaffold, which draws it as a small accent
+/// capsule, “+ New”, the only capsule in the toolbar.
 struct ToolbarAction: View {
     let title: LocalizedStringKey
     let systemImage: String
     var primary = false
     var isEnabled = true
     let action: () -> Void
+
+    /// What the primary capsule says: “New” for a new item, else the title.
+    private var visibleTitle: LocalizedStringKey { systemImage == "plus" ? "New" : title }
 
     init(_ title: LocalizedStringKey, systemImage: String, primary: Bool = false, isEnabled: Bool = true, action: @escaping () -> Void) {
         self.title = title
@@ -222,15 +248,32 @@ struct ToolbarAction: View {
 
     var body: some View {
         if primary {
+            // The one capsule in the toolbar, small and solid in the accent
+            // colour, so the page's primary action stands apart from the
+            // plain symbols beside it. “New” for every page's new item;
+            // the whole name is its tooltip and its accessibility label.
             Button(action: action) {
-                Label(title, systemImage: systemImage)
+                HStack(spacing: 3) {
+                    Image(rx: systemImage)
+                        .font(.system(size: 11, weight: .bold))
+                    Text(visibleTitle)
+                        .font(.system(size: 12.5, weight: .semibold))
+                }
+                .foregroundStyle(Color.rxOnAccent)
+                .padding(.leading, 9)
+                .padding(.trailing, 11)
+                .frame(height: 24)
+                .background(Capsule().fill(Color.rxAccentSolid.opacity(isEnabled ? 1 : 0.4)))
+                .contentShape(Capsule())
+                .fixedSize()
             }
-            .rxPrimaryAction()
+            .buttonStyle(.plain)
             .disabled(!isEnabled)
             .help(Text(title))
+            .accessibilityLabel(Text(title))
         } else {
             Button(action: action) {
-                Label(title, systemImage: systemImage)
+                Label(title, rx: systemImage)
             }
             .disabled(!isEnabled)
             .help(Text(title))

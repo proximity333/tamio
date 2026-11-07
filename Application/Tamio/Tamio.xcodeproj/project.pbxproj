@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0D996008869B53B9E095749C /* PageScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */; };
+		0DC4C788F8B5EC6EC2B64532 /* SidebarSlide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63796B4E4DBEEC81D63678D4 /* SidebarSlide.swift */; };
 		11B537FA4478F90533B25DD9 /* SyncedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19EE5D514035098C28958260 /* SyncedSettings.swift */; };
 		13B1EBCB526576E408152CE0 /* TamioModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3E56E2E2CB7C5ABCE3270FA /* TamioModule */; };
 		14821D2BEB0AF7EE8F14421A /* OpenSSHConfigResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A715F31337168A65B48A07 /* OpenSSHConfigResolver.swift */; };
@@ -39,6 +40,7 @@
 		8ED6DCE83F8FD7FBA2CED5C8 /* AgentSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D77332CA29BD257A4BA5AD0 /* AgentSettings.swift */; };
 		9F47B627FDC40959A351D89B /* DoubleConfirm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18038823C6B06193E1A8D86A /* DoubleConfirm.swift */; };
 		A1376A08C03541305FE6BA99 /* SSHConfigImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFCBE66686362A4C966742A /* SSHConfigImportSheet.swift */; };
+		A18AECED619F516622FB513E /* AlignedWithContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F83F1AFF22EB00B4B6D74EEF /* AlignedWithContent.swift */; };
 		ADF9F497480AAECF8EFA2978 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 0536A2AD7F379DA9E4410736 /* LICENSE */; };
 		B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */; };
 		B347AFC662FEA41D342D2394 /* MonitorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */; };
@@ -104,6 +106,7 @@
 		5AE055DD91FA890DB5DDB079 /* EULA */ = {isa = PBXFileReference; path = EULA; sourceTree = "<group>"; };
 		5BF8E05669BAD48CA9ADC146 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchSnippetExecContext.swift; sourceTree = "<group>"; };
+		63796B4E4DBEEC81D63678D4 /* SidebarSlide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSlide.swift; sourceTree = "<group>"; };
 		655C0A15AF2F03284F556BC5 /* MacUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacUpdates.swift; sourceTree = "<group>"; };
 		679A47FAE8BD5AB800A76194 /* Tamio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tamio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6DB86E586C8CCFF7474F9F75 /* MenubarTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarTool.swift; sourceTree = "<group>"; };
@@ -133,6 +136,7 @@
 		E9D95BD46C45D856C39E3568 /* PresentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentError.swift; sourceTree = "<group>"; };
 		F42B19215937CD8331FA07FC /* TerminalManager+Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TerminalManager+Context.swift"; sourceTree = "<group>"; };
 		F5BD85D2A70187112CEC7FAB /* MachineStatus */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatus; path = ../../Foundation/MachineStatus; sourceTree = SOURCE_ROOT; };
+		F83F1AFF22EB00B4B6D74EEF /* AlignedWithContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlignedWithContent.swift; sourceTree = "<group>"; };
 		FB9E4DDA19C6E86B44842578 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -328,9 +332,11 @@
 		8963826341C72F4CB8E0C5C7 /* Shell */ = {
 			isa = PBXGroup;
 			children = (
+				F83F1AFF22EB00B4B6D74EEF /* AlignedWithContent.swift */,
 				2EAB94544BDE15E396B57A48 /* AppRouter.swift */,
 				85358DC98DB406C6FB6D164E /* MainView.swift */,
 				9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */,
+				63796B4E4DBEEC81D63678D4 /* SidebarSlide.swift */,
 				42B043231E7AF65887A269C2 /* SidebarView.swift */,
 				29183565D571B1DD9EFBC65E /* UpdateCenter.swift */,
 			);
@@ -538,6 +544,7 @@
 			files = (
 				B407B4973269B8D2FF62A6CF /* AgentBridge.swift in Sources */,
 				8ED6DCE83F8FD7FBA2CED5C8 /* AgentSettings.swift in Sources */,
+				A18AECED619F516622FB513E /* AlignedWithContent.swift in Sources */,
 				8766A75FC53E74F9069FC9A2 /* AppRouter.swift in Sources */,
 				24E5740380D9EAC687D3FC9E /* BatchRunSheet.swift in Sources */,
 				B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */,
@@ -565,6 +572,7 @@
 				EB87D94F557DAFC57811CD08 /* ServerEditorDialog.swift in Sources */,
 				ECD3BB0A68E4995B319A09DF /* ServersView.swift in Sources */,
 				BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */,
+				0DC4C788F8B5EC6EC2B64532 /* SidebarSlide.swift in Sources */,
 				69FFECCDAACA590F05A1F963 /* SidebarView.swift in Sources */,
 				4D8520C6A941E8188A7D2F17 /* SnippetEditorSheet.swift in Sources */,
 				D3CDEBCD8F8F7C158C37684E /* SnippetsView.swift in Sources */,

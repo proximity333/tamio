@@ -137,46 +137,21 @@ public struct HomeGroupSwitcher: View {
         return items
     }
 
-    @Namespace private var pill
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     public var body: some View {
         let segments = segments
         let active = filterStore.selection.resolved(in: store.machineGroup.machines)
         if !segments.isEmpty {
-            HStack(spacing: 0) {
-                ForEach(segments, id: \.filter) { segment in
-                    let isSelected = segment.filter == active
-                    Button {
-                        guard filterStore.selection != segment.filter else { return }
-                        filterStore.selection = segment.filter
-                    } label: {
-                        Text(segment.title)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.primary.opacity(isSelected ? 0.96 : 0.78))
-                            .lineLimit(1)
-                            .padding(.horizontal, 14)
-                            .frame(minWidth: 56, minHeight: 28, maxHeight: 28)
-                            .background {
-                                if isSelected {
-                                    Capsule()
-                                        .fill(Color.primary.opacity(0.14))
-                                        .matchedGeometryEffect(id: "selection", in: pill)
-                                }
-                            }
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .help(segment.count == 1 ? String(localized: "1 server") : String(localized: "\(segment.count) servers"))
-                    .accessibilityLabel("\(segment.rawTitle), \(segment.count)")
-                    .accessibilityAddTraits(isSelected ? .isSelected : [])
-                }
+            RXTabs(segments.map { segment in
+                .init(
+                    segment.filter,
+                    Text(segment.title),
+                    help: Text(segment.count == 1 ? String(localized: "1 server") : String(localized: "\(segment.count) servers")),
+                    accessibilityLabel: Text("\(segment.rawTitle), \(segment.count)")
+                )
+            }, selection: active) { filter in
+                filterStore.selection = filter
             }
-            .padding(.horizontal, 4)
-            .fixedSize()
-            .animation(reduceMotion ? nil : .rxMove, value: active)
             .help(String(localized: "Show every server, or one group's"))
-            .accessibilityElement(children: .contain)
             .accessibilityLabel(String(localized: "Group"))
             .onAppear { reconcile(segments) }
             .onChange(of: segments) { reconcile($0) }
