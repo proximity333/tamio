@@ -133,13 +133,6 @@ struct TamioCommands: Commands {
             .keyboardShortcut("5", modifiers: .command)
             Divider()
         }
-        // The File menu's Close would take the main window away, and its ⌘W
-        // competes with closing the session in view; replace the system Close
-        // commands with nothing. The AppKit stripping below stays as a backup
-        // for the times SwiftUI puts its defaults back.
-        CommandGroup(replacing: .close) {
-            EmptyView()
-        }
         CommandGroup(before: .windowList) {
             Button("Main Window") { MainWindow.show() }
                 .keyboardShortcut("0", modifiers: .command)
@@ -261,6 +254,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_: Notification) {
+        menuSweep?.invalidate()
         AgentSocket.shared.stop()
     }
 
@@ -298,28 +292,44 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Removes the File menu's Close commands so ⌘W cannot close the main
     /// window: with the window gone the app lives in the background, which
     /// reads as if Tamio had quit. Quit stays on ⌘Q, and the window comes
-    /// back from the Dock, the menu bar item and ⌘0.
+    /// back from the Dock, the menu bar item and ⌘0. Close All goes too:
+    /// it closes windows just the same.
     private func hideCloseWindowCommand() {
         for submenu in NSApp.mainMenu?.items.compactMap(\.submenu) ?? [] {
             // Snapshot: the items cannot be removed while they are being listed.
-            for item in Array(submenu.items) where item.action == #selector(NSWindow.performClose(_:)) {
+            for item in Array(submenu.items)
+            where item.action == #selector(NSWindow.performClose(_:))
+                || item.action.map({ NSStringFromSelector($0) == "closeAll:" }) == true {
                 submenu.removeItem(item)
             }
         }
     }
 
     /// SwiftUI rebuilds the menu bar as its commands change, which puts the
-    /// system Close commands back. Strip them again each time a menu is about
-    /// to open, so the File menu never shows a Close.
+    /// system Close commands back. macOS 26 and later open menus without
+    /// NSMenu's tracking notifications and without asking the menu's
+    /// delegate, so there is no moment to catch a rebuild; a short sweep is
+    /// the only hook that always runs. Scanning the menus is a handful of
+    /// items, and the tracking notification still does the work where it is
+    /// posted.
     private func watchMenuRebuilds() {
         NotificationCenter.default.addObserver(
             forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main
         ) { [weak self] _ in
             self?.hideCloseWindowCommand()
         }
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.hideCloseWindowCommand()
+        }
+        menuSweep = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+            self?.hideCloseWindowCommand()
+        }
     }
 
     private var commandWMonitor: Any?
+    private var menuSweep: Timer?
 
     /// ⌘W closes the session in view. The monitor answers key events before
     /// the menu's key equivalents, so however often SwiftUI restores its Close

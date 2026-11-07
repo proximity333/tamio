@@ -76,6 +76,11 @@ the user. To release, rename that heading to the version and date
   segmented control is, instead of reading as plain words.
 
 ### Fixed
+- **The File menu no longer offers Close.** SwiftUI put Close and Close All
+  back into the File menu whenever its commands changed, and since macOS 26
+  opening a menu no longer tells the app, so the old moment for stripping
+  them never came; a short sweep keeps the menu free of them now. ⌘W still
+  closes the page in view, never the window.
 - **The Servers list scrolls smoothly.** With 60 servers, a third of the
   frames of a scroll came late. Each row and each of its three buttons
   tracked the pointer, so every frame tested hundreds of regions and drew the
