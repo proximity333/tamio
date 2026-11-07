@@ -13,6 +13,17 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.23] - 2026-11-07
+
+### Changed
+- **The File menu's Close closes the page in view, as ⌘W does.** SwiftUI's
+  own Close closed the window, which leaves Tamio in the background looking
+  as though it had quit. Its action is now the one ⌘W already had — the
+  terminal, files or monitor page on show — and it is greyed out on the
+  pages without one. The title and ⌘W stay as macOS draws them; a rebuilt
+  menu bar is rewritten on the next run-loop pass, where removing the item
+  only made SwiftUI put it straight back.
+
 ## [0.2.22] - 2026-11-07
 
 ### Added
@@ -78,11 +89,10 @@ the user. To release, rename that heading to the version and date
   segmented control is, instead of reading as plain words.
 
 ### Fixed
-- **The File menu no longer offers Close.** SwiftUI put Close and Close All
-  back into the File menu whenever its commands changed, and since macOS 26
-  opening a menu no longer tells the app, so the old moment for stripping
-  them never came; a short sweep keeps the menu free of them now. ⌘W still
-  closes the page in view, never the window.
+- **⌘W closes the page in view, never the window.** The File menu's Close
+  would take the main window away and leave Tamio in the background looking
+  as though it had quit; ⌘W keeps closing the terminal, files or monitor
+  page on show.
 - **The Servers list scrolls smoothly.** With 60 servers, a third of the
   frames of a scroll came late. Each row and each of its three buttons
   tracked the pointer, so every frame tested hundreds of regions and drew the
