@@ -6273,22 +6273,6 @@
         }
       }
     },
-    "Open terminal sessions will be closed.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open terminal sessions will be closed."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前打开的终端会话将被关闭。"
-          }
-        }
-      }
-    },
     "Optional": {
       "localizations": {
         "en": {
@@ -6605,22 +6589,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "退出 Tamio"
-          }
-        }
-      }
-    },
-    "Quit Tamio?": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quit Tamio?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "要退出 Tamio 吗？"
           }
         }
       }
@@ -16795,18 +16763,18 @@
         }
       }
     },
-    "Confirm before closing a connected terminal or quitting.": {
+    "Confirm before closing a connected terminal.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm before closing a connected terminal or quitting."
+            "value": "Confirm before closing a connected terminal."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "关闭已连接的终端或退出前确认。"
+            "value": "关闭已连接的终端前先确认。"
           }
         }
       }

@@ -11,7 +11,8 @@ import SwiftUI
 extension Dialogs {
     /// ConfirmDialog: the title names the thing, one sentence of consequence,
     /// a verb on the confirming button and Cancel. Skipped when
-    /// Settings › General › Ask before closing is off, unless `always`: losing
+    /// Settings › General › Sessions › Ask before closing a session is off,
+    /// unless `always`: losing
     /// unsaved text is asked about whatever the setting.
     static func requiresConfirmation(
         message: String,

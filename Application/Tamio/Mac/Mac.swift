@@ -14,9 +14,6 @@ import TamioModule
 enum Mac {
     // MARK: Application
 
-    /// Asked when the app is about to quit; false keeps it running, as when
-    /// the user is being asked first.
-    @MainActor static var mayTerminate: (() -> Bool)?
     /// Shows the main window, for the menu bar item's Open Tamio.
     @MainActor static var openApp: (() -> Void)?
 

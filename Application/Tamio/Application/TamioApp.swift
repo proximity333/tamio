@@ -192,7 +192,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
 
     func applicationDidFinishLaunching(_: Notification) {
         AppearancePreference.applyStored()
-        Mac.mayTerminate = { AppDelegate.shared.mayTerminate() }
         Mac.openApp = { MainWindow.show() }
         reconcileFileMenuClose()
         watchMenuRebuilds()
@@ -248,8 +247,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         return false
     }
 
+    /// Quit goes through at once, however many terminals are open. Closing a
+    /// session on its own is the step that asks first, when that setting is on.
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
-        if let mayTerminate = Mac.mayTerminate, !mayTerminate() { return .terminateCancel }
+        TerminalManager.shared.closeAll()
         return .terminateNow
     }
 
@@ -258,35 +259,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             CFRunLoopRemoveObserver(CFRunLoopGetMain(), menuObserver, .commonModes)
         }
         AgentSocket.shared.stop()
-    }
-
-    /// Set once the user agreed to quit, so the quit that follows goes through.
-    @MainActor private var quitConfirmed = false
-
-    /// Asked when the app is about to quit. With terminals open, the answer
-    /// is no for now, and the question goes to the user.
-    @MainActor func mayTerminate() -> Bool {
-        // The question was answered; this is the quit that follows it.
-        if quitConfirmed { return true }
-        guard !TerminalManager.shared.sessionContexts.isEmpty else { return true }
-        if TamioStore.shared.disableConformation {
-            TerminalManager.shared.closeAll()
-            return true
-        }
-        Dialogs.requiresConfirmation(
-            message: String(localized: "Quit Tamio?"),
-            informative: String(localized: "Open terminal sessions will be closed."),
-            confirmTitle: String(localized: "Quit"),
-            destructive: true
-        ) { confirmed in
-            guard confirmed else { return }
-            MainActor.assumeIsolated {
-                self.quitConfirmed = true
-                TerminalManager.shared.closeAll()
-                Mac.terminate()
-            }
-        }
-        return false
     }
 
     // MARK: - Window lifecycle and background residency

@@ -29,7 +29,7 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "general.appearance", keywords: "appearance dark light mode theme system frosted glass translucent transparent blur wallpaper") {
                     AppearanceSettings().environmentObject(store)
                 },
-                ConfigHostSettingsSection(id: "general.sessions", keywords: "open sessions automatically ask before closing confirmation quit") {
+                ConfigHostSettingsSection(id: "general.sessions", keywords: "open sessions automatically ask before closing confirmation") {
                     SessionSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "general.files", keywords: "files sftp hidden dot files show") {
@@ -173,7 +173,7 @@ private struct SessionSettings: View {
             )
             SwitchRow(
                 "Ask before closing a session",
-                description: "Confirm before closing a connected terminal or quitting.",
+                description: "Confirm before closing a connected terminal.",
                 isOn: Binding(get: { !store.disableConformation }, set: { store.disableConformation = !$0 })
             )
         }

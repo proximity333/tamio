@@ -13,6 +13,12 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **Quitting closes Tamio at once.** ⌘Q no longer asks while terminals are
+  open; their sessions close with it. Closing a session on its own still asks
+  first, unless Settings › General › Sessions › Ask before closing a session
+  is off.
+
 ## [0.2.23] - 2026-11-07
 
 ### Changed
