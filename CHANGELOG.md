@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.25] - 2026-11-08
+
 ### Fixed
 - **Paste protection confirms with Return.** In the warning about text that
   could run commands, Return now pastes and Escape cancels, as the sheet's
