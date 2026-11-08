@@ -275,7 +275,7 @@ private final class TerminalPresentation: NSObject, TerminalSurfaceTitleDelegate
         /// can be read before deciding.
         private static func pastePreview(_ contents: String) -> NSView {
             let frame = NSRect(x: 0, y: 0, width: 440, height: 110)
-            let text = NSTextView(frame: frame)
+            let text = PastePreviewTextView(frame: frame)
             text.string = String(contents.prefix(4000))
             text.isEditable = false
             text.isSelectable = true
@@ -289,6 +289,13 @@ private final class TerminalPresentation: NSObject, TerminalSurfaceTitleDelegate
             scroll.hasVerticalScroller = true
             scroll.borderType = .bezelBorder
             return scroll
+        }
+
+        /// A preview the sheet can hand the keyboard to its default button: a
+        /// text view is first responder by default, and while it holds Return,
+        /// Paste only answered to a click.
+        private final class PastePreviewTextView: NSTextView {
+            override var acceptsFirstResponder: Bool { false }
         }
     #endif
 }

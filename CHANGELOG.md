@@ -13,6 +13,12 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Fixed
+- **Paste protection confirms with Return.** In the warning about text that
+  could run commands, Return now pastes and Escape cancels, as the sheet's
+  buttons promise; the preview used to hold the keyboard, so Paste took a
+  click.
+
 ## [0.2.24] - 2026-11-08
 
 ### Added
