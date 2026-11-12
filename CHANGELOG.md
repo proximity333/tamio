@@ -13,6 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **The network card lists the server's own interfaces.** Docker's bridges,
+  the pairs that lead into containers and loopback now sit under a Virtual
+  Interfaces row with their count, collapsed until you open it: on a
+  container host that was two dozen lines ahead of everything you actually
+  watch. The bars keep one scale either way, so opening the group does not
+  move the others, and a machine whose only interfaces are virtual ones (a
+  container itself) still lists them as its own.
+
 ## [0.2.27] - 2026-11-12
 
 ### Fixed

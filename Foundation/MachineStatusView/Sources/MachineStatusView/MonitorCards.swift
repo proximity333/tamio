@@ -322,39 +322,71 @@ public struct ThroughputCard: View {
 
 public struct NetworkCard: View {
     @ObservedObject var session: MonitorSession
+    @State private var showsVirtual = false
 
     public init(session: MonitorSession) {
         self.session = session
     }
 
     public var body: some View {
-        let elements = session.status.network.elements.sorted { ($0.rxBytesPerSec + $0.txBytesPerSec) > ($1.rxBytesPerSec + $1.txBytesPerSec) }
-        let peak = Double(max(1, elements.map { max($0.rxBytesPerSec, $0.txBytesPerSec) }.max() ?? 1))
+        let sorted = session.status.network.elements.sorted { ($0.rxBytesPerSec + $0.txBytesPerSec) > ($1.rxBytesPerSec + $1.txBytesPerSec) }
+        let physical = sorted.filter { !NetworkFilter.isVirtual($0.device) }
+        let virtual = sorted.filter { NetworkFilter.isVirtual($0.device) }
+        // A container's own network namespace has nothing but veth and lo:
+        // there the virtual ones are the server's interfaces, so they are
+        // listed as its own instead of leaving an empty card.
+        let shown = physical.isEmpty ? sorted : physical
+        // One scale for both groups, so opening the second does not move the
+        // bars of the first.
+        let peak = Double(max(1, sorted.map { max($0.rxBytesPerSec, $0.txBytesPerSec) }.max() ?? 1))
         VStack(alignment: .leading, spacing: 0) {
             // Totals live in the Receive and Transmit cards beside this one.
             CardHead("Network")
-            if elements.isEmpty {
+            if shown.isEmpty {
                 HelpText("No data")
                     .padding(.top, RX.Space.s2)
             } else {
-                VStack(spacing: RX.Space.s3) {
-                    ForEach(elements) { element in
-                        UsageListRow(
-                            name: element.device,
-                            value: "↓ \(RXFormat.rateString(Double(element.rxBytesPerSec)))",
-                            detail: "↑ \(RXFormat.rateString(Double(element.txBytesPerSec)))"
-                        ) {
-                            UsageBar([
-                                .init("Receive", Double(element.rxBytesPerSec) / peak / 2, .rxSeries2),
-                                .init("Transmit", Double(element.txBytesPerSec) / peak / 2, .rxAccent),
-                            ])
+                rows(shown, peak: peak)
+                    .padding(.top, RX.Space.s2)
+                if !physical.isEmpty, !virtual.isEmpty {
+                    // The inspector's Containers tab already keeps these out
+                    // of the way; a container host can list two dozen of them.
+                    DisclosureGroup(isExpanded: $showsVirtual) {
+                        rows(virtual, peak: peak)
+                            .padding(.top, RX.Space.s2)
+                    } label: {
+                        HStack(spacing: RX.Space.s2) {
+                            CapsLabel("Virtual Interfaces")
+                            Spacer(minLength: RX.Space.s2)
+                            Text(verbatim: "\(virtual.count)")
+                                .font(.system(size: 11).monospacedDigit())
+                                .foregroundStyle(.rxInkSecondary)
                         }
                     }
+                    .padding(.top, RX.Space.s3)
                 }
-                .padding(.top, RX.Space.s2)
             }
         }
         .rxCard()
+    }
+
+    /// One row per interface: its name, both rates, and the two bars that
+    /// share `peak` as their scale.
+    func rows(_ elements: [ServerStatus.NetworkInfo.NetworkInfoElement], peak: Double) -> some View {
+        VStack(spacing: RX.Space.s3) {
+            ForEach(elements) { element in
+                UsageListRow(
+                    name: element.device,
+                    value: "↓ \(RXFormat.rateString(Double(element.rxBytesPerSec)))",
+                    detail: "↑ \(RXFormat.rateString(Double(element.txBytesPerSec)))"
+                ) {
+                    UsageBar([
+                        .init("Receive", Double(element.rxBytesPerSec) / peak / 2, .rxSeries2),
+                        .init("Transmit", Double(element.txBytesPerSec) / peak / 2, .rxAccent),
+                    ])
+                }
+            }
+        }
     }
 }
 
