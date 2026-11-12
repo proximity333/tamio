@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.26] - 2026-11-12
+
 ### Added
 - **Containers in the monitor.** A server that runs Docker now gets a
   Containers card in the monitor, under Network and Graphics: the same rows
