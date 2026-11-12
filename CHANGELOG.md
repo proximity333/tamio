@@ -13,6 +13,14 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Added
+- **Containers in the monitor.** A server that runs Docker now gets a
+  Containers card in the monitor, under Network and Graphics: the same rows
+  as the inspector's Containers tab — CPU, memory, block and network I/O for
+  every container, with the menu that starts, stops, restarts, shows the logs
+  of or opens a shell in one. A server without Docker gets no card, and the
+  readings only run while the monitor or the tab is on screen.
+
 ## [0.2.25] - 2026-11-08
 
 ### Fixed
