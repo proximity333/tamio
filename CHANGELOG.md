@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.31] - 2026-11-12
+
 ### Fixed
 - **⌘Q quits from the terminal.** Ghostty binds ⌘Q to its own quit action,
   and its terminal view takes any key that matches a binding before the menu
