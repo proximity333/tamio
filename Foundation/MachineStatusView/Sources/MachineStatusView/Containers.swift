@@ -107,6 +107,14 @@ final class ContainerModel: ObservableObject {
         if sorted != containers { containers = sorted }
         loaded = true
     }
+
+    // MARK: What the containers add up to
+
+    /// How many are up and how many are not: the states Docker answers with
+    /// `created`, `exited`, `paused`, `dead` and `restarting` all count as
+    /// stopped, so the two add up to the list's length.
+    var running: Int { containers.filter(\.running).count }
+    var stopped: Int { containers.count - running }
 }
 
 // MARK: - The rows
@@ -250,10 +258,12 @@ struct ContainerList: View {
 // MARK: - Monitor card
 
 /// The monitor's Containers card: the same rows as the inspector's tab, in a
-/// card of the grid. Not there at all on a server without Docker.
+/// card of the grid, collapsed to one line until opened. Not there at all on
+/// a server without Docker.
 public struct ContainersCard: View {
     @ObservedObject var session: MonitorSession
     @ObservedObject private var model: ContainerModel
+    @State private var showsContainers = false
 
     public init(session: MonitorSession) {
         self.session = session
@@ -264,13 +274,33 @@ public struct ContainersCard: View {
         Group {
             if model.loaded, !model.dockerAbsent {
                 VStack(alignment: .leading, spacing: 0) {
-                    CardHead("Containers")
                     if let problem = model.problem {
+                        CardHead("Containers")
                         HelpText(problem)
                             .padding(.top, RX.Space.s2)
                     } else {
-                        ContainerRows(session: session, containers: model.containers)
-                            .padding(.top, RX.Space.s2)
+                        // A container host runs a dozen of these and every
+                        // row is two lines tall, so the list opens the way the
+                        // network card's virtual group does: the counts stay
+                        // in view, the rows wait for a click.
+                        DisclosureGroup(isExpanded: $showsContainers) {
+                            ContainerRows(session: session, containers: model.containers)
+                                .padding(.top, RX.Space.s2)
+                        } label: {
+                            VStack(alignment: .leading, spacing: RX.Space.s3) {
+                                HStack(spacing: RX.Space.s2) {
+                                    CapsLabel("Containers")
+                                    Spacer(minLength: RX.Space.s2)
+                                    Text(verbatim: "\(model.containers.count)")
+                                        .font(.system(size: 11).monospacedDigit())
+                                        .foregroundStyle(.rxInkSecondary)
+                                }
+                                SubMetricRow([
+                                    .init("Running", value: "\(model.running)", swatch: .rxSuccess),
+                                    .init("Stopped", value: "\(model.stopped)", swatch: .rxInkTertiary),
+                                ])
+                            }
+                        }
                     }
                 }
                 .rxCard()

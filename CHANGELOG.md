@@ -13,6 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **The monitor fits one screen on a container host.** Network moved up the
+  left column, under Memory, and Disks down the right, under the throughput
+  charts, so the long lists and the short ones stop trading places. The
+  containers now open the way the network card's virtual interfaces do:
+  collapsed, with how many are running and how many stopped kept in view.
+  Nothing is hidden either way, and a machine with a dozen containers no
+  longer needs a scroll to reach its disks.
+
 ## [0.2.28] - 2026-11-12
 
 ### Changed
