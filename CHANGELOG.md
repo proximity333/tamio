@@ -13,6 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.27] - 2026-11-12
+
+### Fixed
+- **Auto-updates install again.** Releases from this repository were signed
+  for Sparkle with a key that did not match the one built into the app, so an
+  installed copy refused the update it was offered and only downloading the
+  disk image by hand worked. The feed now carries the app's own key, and a
+  release whose appcast does not verify is stopped before it is published.
+
 ## [0.2.26] - 2026-11-12
 
 ### Added
