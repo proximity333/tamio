@@ -208,6 +208,13 @@ jobs:
           fi
           cat DerivedData/Release/appcast.xml
 
+      - name: Verify the appcast
+        if: env.IS_TAG == 'true'
+        # Publishing an appcast the app cannot verify leaves every installed
+        # copy unable to update, and only the pairing of the secret with the
+        # key in Info.plist decides that. Check it before the release exists.
+        run: bash Workflow/Scripts/verify-appcast.sh DerivedData/Release/Tamio-*.dmg DerivedData/Release/appcast.xml
+
       - name: Publish the release
         if: env.IS_TAG == 'true'
         env:
