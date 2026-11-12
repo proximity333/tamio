@@ -13,6 +13,11 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **Network under Disks.** The right column has room for the interface list
+  now that the virtual ones fold, and the left had grown a card longer than
+  the right: containers sit under Memory, network under the disks.
+
 ### Fixed
 - **The containers card shows.** In 0.2.29 it never did, on servers with
   Docker and without: the card waited for a reading that only its own task
