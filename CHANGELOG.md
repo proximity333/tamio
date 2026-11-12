@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.28] - 2026-11-12
+
 ### Changed
 - **The network card lists the server's own interfaces.** Docker's bridges,
   the pairs that lead into containers and loopback now sit under a Virtual
@@ -21,6 +23,12 @@ the user. To release, rename that heading to the version and date
   watch. The bars keep one scale either way, so opening the group does not
   move the others, and a machine whose only interfaces are virtual ones (a
   container itself) still lists them as its own.
+
+### Fixed
+- **The containers card is where you would look for it.** It arrived under
+  the network card, which on a container host is two dozen rows long, so
+  the figures 0.2.26 promised went by unseen; they now sit with the host's
+  own processor, memory and disks.
 
 ## [0.2.27] - 2026-11-12
 
