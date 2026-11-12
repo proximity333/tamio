@@ -29,6 +29,10 @@ public struct MonitorDashboard: View {
                 rightColumn
             }
         }
+        // The containers are read here, not in their own card: that card
+        // shows nothing until a reading arrives, and a view that shows
+        // nothing never starts the reading it is waiting for.
+        .readingContainers(of: session)
     }
 
     var leftColumn: some View {

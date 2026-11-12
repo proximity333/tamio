@@ -13,6 +13,13 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Fixed
+- **The containers card shows.** In 0.2.29 it never did, on servers with
+  Docker and without: the card waited for a reading that only its own task
+  could start, and a view that draws nothing runs no task at all, so nothing
+  was ever asked and nothing was ever drawn. The dashboard asks now and the
+  card draws what comes back.
+
 ## [0.2.29] - 2026-11-12
 
 ### Changed

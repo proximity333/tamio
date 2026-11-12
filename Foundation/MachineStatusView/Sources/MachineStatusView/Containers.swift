@@ -257,9 +257,32 @@ struct ContainerList: View {
 
 // MARK: - Monitor card
 
+/// Reads the server's containers while the view it is attached to is shown.
+///
+/// The reading cannot live in `ContainersCard`: the card draws nothing at
+/// all until a reading has come back, and a view that draws nothing runs no
+/// task of its own, so the card would wait forever for the reading that only
+/// it could start. The dashboard, which always has cards to show, asks.
+public extension View {
+    func readingContainers(of session: MonitorSession) -> some View {
+        task(id: session.id) {
+            let model = ContainerModel.of(session.machine.id)
+            // A monitor stays open for hours, so it reads slower than the
+            // inspector; a server without Docker is asked again only now and
+            // then, since installing it is a rare event.
+            let every = max(5, session.refreshInterval)
+            while !Task.isCancelled {
+                await model.refresh(session)
+                let seconds = model.dockerAbsent ? max(60, every) : every
+                try? await Task.sleep(nanoseconds: UInt64(seconds) * NSEC_PER_SEC)
+            }
+        }
+    }
+}
+
 /// The monitor's Containers card: the same rows as the inspector's tab, in a
-/// card of the grid, collapsed to one line until opened. Not there at all on
-/// a server without Docker.
+/// card of the grid, collapsed to its counts until opened. Not there at all
+/// on a server without Docker.
 public struct ContainersCard: View {
     @ObservedObject var session: MonitorSession
     @ObservedObject private var model: ContainerModel
@@ -304,17 +327,6 @@ public struct ContainersCard: View {
                     }
                 }
                 .rxCard()
-            }
-        }
-        .task(id: session.id) {
-            // A monitor stays open for hours, so it reads slower than the
-            // inspector; a server without Docker is asked again only now and
-            // then, since installing it is a rare event.
-            let every = max(5, session.refreshInterval)
-            while !Task.isCancelled {
-                await model.refresh(session)
-                let seconds = model.dockerAbsent ? max(60, every) : every
-                try? await Task.sleep(nanoseconds: UInt64(seconds) * NSEC_PER_SEC)
             }
         }
     }
