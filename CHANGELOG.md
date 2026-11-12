@@ -13,6 +13,14 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Fixed
+- **⌘Q quits from the terminal.** Ghostty binds ⌘Q to its own quit action,
+  and its terminal view takes any key that matches a binding before the menu
+  is asked, so on a terminal page the keystroke never reached Tamio's Quit —
+  and Ghostty's own quit does nothing outside Ghostty's app, which left ⌘Q
+  doing nothing at all. It now quits Tamio from any page, as it always did
+  everywhere else.
+
 ## [0.2.30] - 2026-11-12
 
 ### Changed

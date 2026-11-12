@@ -196,6 +196,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         reconcileFileMenuClose()
         watchMenuRebuilds()
         interceptCommandW()
+        interceptCommandQ()
         observeWindows()
         MenubarTool.shared.restore()
         #if DEBUG
@@ -314,6 +315,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     private var commandWMonitor: Any?
+    private var commandQMonitor: Any?
     private var menuObserver: CFRunLoopObserver?
 
     /// ⌘W closes the session in view. The monitor answers key events before
@@ -327,6 +329,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             else { return event }
             MainActor.assumeIsolated {
                 AppRouter.shared.closeCurrentSession()
+            }
+            return nil
+        }
+    }
+
+    /// ⌘Q quits, even from a terminal. Ghostty binds super+q to its own quit
+    /// action, and its view claims any key that matches a binding before the
+    /// menu is asked, so in a terminal the keystroke never reached the app's
+    /// Quit — and Ghostty's own quit does nothing outside Ghostty's app, which
+    /// left ⌘Q doing nothing at all. The monitor answers it first, as ⌘W's does.
+    private func interceptCommandQ() {
+        commandQMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+                  event.charactersIgnoringModifiers == "q"
+            else { return event }
+            MainActor.assumeIsolated {
+                Mac.terminate()
             }
             return nil
         }
