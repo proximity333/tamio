@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.30] - 2026-11-12
+
 ### Changed
 - **Network under Disks.** The right column has room for the interface list
   now that the virtual ones fold, and the left had grown a card longer than
