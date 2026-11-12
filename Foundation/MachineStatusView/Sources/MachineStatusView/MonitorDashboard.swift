@@ -8,8 +8,8 @@ import TamioModule
 import SwiftUI
 
 /// The monitor's card grid. Two columns when there is room (Load, Processor,
-/// Memory, Disks on the left; Receive and Transmit, Network, Graphics and
-/// Containers on the right), one otherwise.
+/// Memory, Disks and Containers on the left; Receive and Transmit, Network
+/// and Graphics on the right), one otherwise.
 public struct MonitorDashboard: View {
     @ObservedObject var session: MonitorSession
 
@@ -38,6 +38,10 @@ public struct MonitorDashboard: View {
             ProcessorCard(session: session).rxRise(2)
             MemoryCard(session: session).rxRise(4)
             DiskCard(session: session).rxRise(6)
+            // The containers' own figures under the host's: on a Docker host
+            // the network list runs to two dozen interfaces, and a card after
+            // it is off the page until the user goes looking.
+            ContainersCard(session: session).rxRise(8)
         }
         .frame(maxWidth: .infinity)
     }
@@ -51,7 +55,6 @@ public struct MonitorDashboard: View {
             .rxRise(1)
             NetworkCard(session: session).rxRise(3)
             GraphicsCard(session: session).rxRise(5)
-            ContainersCard(session: session).rxRise(7)
         }
         .frame(maxWidth: .infinity)
     }
