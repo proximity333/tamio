@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.29] - 2026-11-12
+
 ### Changed
 - **The monitor fits one screen on a container host.** Network moved up the
   left column, under Memory, and Disks down the right, under the throughput
