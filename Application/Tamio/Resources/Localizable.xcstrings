@@ -21531,7 +21531,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请设置一个用于加密存储内容的密码短语。"
+            "value": "请设置一个用于加密存储内容的口令。"
           }
         }
       }
@@ -21643,7 +21643,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "用于打开服务器上的文件。请在其他设备上使用同一个密码短语。"
+            "value": "用于打开服务器上的文件。请在其他设备上使用同一个口令。"
           }
         }
       }
@@ -21659,7 +21659,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请设置密码短语。它是打开服务器内容的唯一钥匙，忘记后无法找回。"
+            "value": "请设置口令。它是打开服务器内容的唯一钥匙，忘记后无法找回。"
           }
         }
       }
@@ -21755,7 +21755,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "更改密码短语"
+            "value": "更改口令"
           }
         }
       }
@@ -21851,7 +21851,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "加密密码短语"
+            "value": "加密口令"
           }
         }
       }
@@ -21931,7 +21931,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "服务器上的内容由你的另一台设备用密码短语加密。请在此输入该密码短语。"
+            "value": "服务器上的内容由你的另一台设备用口令加密。请在此输入该口令。"
           }
         }
       }
@@ -21947,7 +21947,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "此设备上的密码短语无法打开服务器上的内容。请输入其他设备使用的密码短语。"
+            "value": "此设备上的口令无法打开服务器上的内容。请输入其他设备使用的口令。"
           }
         }
       }
@@ -22108,6 +22108,470 @@
           "stringUnit": {
             "state": "translated",
             "value": "测试地址和密码，或立即同步。开启后，Tamio 每 %lld 分钟检查一次服务器，在每次更改后同步，并在应用重新激活时同步。"
+          }
+        }
+      }
+    },
+    "Automatic upload": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic upload"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动上传"
+          }
+        }
+      }
+    },
+    "Remote path": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote path"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远端路径"
+          }
+        }
+      }
+    },
+    "User-Agent": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User-Agent"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User-Agent"
+          }
+        }
+      }
+    },
+    "Remember password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remember password"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记住密码"
+          }
+        }
+      }
+    },
+    "Kept encrypted on this device with Tamio's key; without it, enter the password again after Tamio restarts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept encrypted on this device with Tamio's key; without it, enter the password again after Tamio restarts."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Tamio 的密钥加密保存在此设备上；关闭后，Tamio 重启时需要重新输入密码。"
+          }
+        }
+      }
+    },
+    "Every": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每"
+          }
+        }
+      }
+    },
+    "How often automatic upload runs.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How often automatic upload runs."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自动上传的运行间隔。"
+          }
+        }
+      }
+    },
+    "minutes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "minutes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分钟"
+          }
+        }
+      }
+    },
+    "Last successful sync": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last successful sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次成功同步"
+          }
+        }
+      }
+    },
+    "Connection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
+          }
+        }
+      }
+    },
+    "The WebDAV server's address, such as https://dav.example.com/.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The WebDAV server's address, such as https://dav.example.com/."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebDAV 服务器地址，例如 https://dav.example.com/。"
+          }
+        }
+      }
+    },
+    "The file's path under that address. Tamio creates its folder if the server allows it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file's path under that address. Tamio creates its folder if the server allows it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该地址下的文件路径。如果服务器允许，Tamio 会创建其文件夹。"
+          }
+        }
+      }
+    },
+    "Optional. Some servers require a client they recognize; empty sends Tamio's own.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional. Some servers require a client they recognize; empty sends Tamio's own."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可选。部分服务器要求可识别的客户端；留空则发送 Tamio 自己的标识。"
+          }
+        }
+      }
+    },
+    "Uploads this device's servers, identities (passwords and private keys), snippets and settings to one sealed file on your WebDAV server, now and then every %lld minutes while Tamio is open. Download is always manual.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploads this device's servers, identities (passwords and private keys), snippets and settings to one sealed file on your WebDAV server, now and then every %lld minutes while Tamio is open. Download is always manual."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将此设备的服务器、身份（包括密码和私钥）、代码片段和设置上传到 WebDAV 服务器上的一个加密文件。开启后立即上传一次，之后在 Tamio 运行期间每 %lld 分钟上传一次。下载始终需要手动操作。"
+          }
+        }
+      }
+    },
+    "Uploads this device's servers, identities (passwords and private keys), snippets and settings to one sealed file on your WebDAV server. Automatic upload is off; use Upload and Download below.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploads this device's servers, identities (passwords and private keys), snippets and settings to one sealed file on your WebDAV server. Automatic upload is off; use Upload and Download below."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将此设备的服务器、身份（包括密码和私钥）、代码片段和设置上传到 WebDAV 服务器上的一个加密文件。自动上传已关闭；请使用下方的「上传」和「下载」。"
+          }
+        }
+      }
+    },
+    "The file is sealed under this passphrase. If another device already uses this file, enter the passphrase it uses; otherwise choose one and keep it safe, as it cannot be recovered.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file is sealed under this passphrase. If another device already uses this file, enter the passphrase it uses; otherwise choose one and keep it safe, as it cannot be recovered."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件使用此口令加密。如果另一台设备已经使用这个文件，请输入该设备使用的口令；否则请设置一个口令并妥善保管，忘记后无法找回。"
+          }
+        }
+      }
+    },
+    "Tests the address and account. It does not upload or download.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tests the address and account. It does not upload or download."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "测试地址和账户，不会上传或下载。"
+          }
+        }
+      }
+    },
+    "Download from the server?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download from the server?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从服务器下载？"
+          }
+        }
+      }
+    },
+    "What is there is merged into this device. Items changed more recently there replace this device's copies; nothing here is uploaded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is there is merged into this device. Items changed more recently there replace this device's copies; nothing here is uploaded."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器上的内容会合并到本设备。服务器上修改时间更晚的项目会替换本设备中的副本；本设备的内容不会上传。"
+          }
+        }
+      }
+    },
+    "Delete the encrypted file and stop automatic upload.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the encrypted file and stop automatic upload."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除加密文件并停止自动上传。"
+          }
+        }
+      }
+    },
+    "Enter the WebDAV server's address.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the WebDAV server's address."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入 WebDAV 服务器地址。"
+          }
+        }
+      }
+    },
+    "Enter a valid WebDAV address.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid WebDAV address."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入有效的 WebDAV 地址。"
+          }
+        }
+      }
+    },
+    "Enter the file's path on the server.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the file's path on the server."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入文件在服务器上的路径。"
+          }
+        }
+      }
+    },
+    "Enter a valid file path.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid file path."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入有效的文件路径。"
+          }
+        }
+      }
+    },
+    "It encrypts your servers, identities, passwords and private keys before they leave this device. If this file already exists on your other devices, enter the passphrase they use; otherwise choose one. It cannot be recovered if you forget it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It encrypts your servers, identities, passwords and private keys before they leave this device. If this file already exists on your other devices, enter the passphrase they use; otherwise choose one. It cannot be recovered if you forget it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "它会在你的服务器、身份、密码和私钥离开此设备前进行加密。如果这个文件已存在于你的其他设备上，请输入它们使用的口令；否则请设置一个。忘记后无法找回。"
+          }
+        }
+      }
+    },
+    "The next upload seals what is on the server under the new passphrase. Your other devices will need it before they can open the file. If this device cannot open what is there with the old one, what it has takes its place.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next upload seals what is on the server under the new passphrase. Your other devices will need it before they can open the file. If this device cannot open what is there with the old one, what it has takes its place."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次上传会用新口令加密服务器上的内容。其他设备需要输入新口令才能打开该文件。如果此设备无法用旧口令打开服务器内容，将用此设备的数据替换。"
+          }
+        }
+      }
+    },
+    "Download": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载"
+          }
+        }
+      }
+    },
+    "Servers, identities (passwords and private keys), snippets and settings go to one sealed file on your WebDAV server, merging what is already there. It runs now and then every %lld minutes while Tamio is open; Download is always manual.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servers, identities (passwords and private keys), snippets and settings go to one sealed file on your WebDAV server, merging what is already there. It runs now and then every %lld minutes while Tamio is open; Download is always manual."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器、身份（包括密码和私钥）、代码片段和设置会写入 WebDAV 服务器上的一个加密文件，并与已有内容合并。开启后立即运行一次，之后在 Tamio 运行期间每 %lld 分钟运行一次；下载始终需要手动操作。"
+          }
+        }
+      }
+    },
+    "Servers, identities (passwords and private keys), snippets and settings go to one sealed file on your WebDAV server, merging what is already there. Automatic upload is off; use Upload and Download below.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servers, identities (passwords and private keys), snippets and settings go to one sealed file on your WebDAV server, merging what is already there. Automatic upload is off; use Upload and Download below."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器、身份（包括密码和私钥）、代码片段和设置会写入 WebDAV 服务器上的一个加密文件，并与已有内容合并。自动上传已关闭；请使用下方的「上传」和「下载」。"
           }
         }
       }

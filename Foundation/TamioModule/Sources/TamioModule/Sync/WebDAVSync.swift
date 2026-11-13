@@ -2,10 +2,11 @@
 //  WebDAVSync.swift
 //  TamioModule
 //
-//  Keeps the servers, identities (their passwords and private keys included),
-//  snippets, port forwards, known hosts and settings the same on every device,
-//  through one file on a WebDAV server. The file is sealed here first, under a
-//  passphrase the user chooses, so the server holds only ciphertext.
+//  One file on the user's WebDAV server holds this device's servers, identities
+//  (their passwords and private keys included), snippets, port forwards, known
+//  hosts, settings and agent activity. Upload seals it here under a passphrase
+//  the user chooses and writes it to the server; download opens what is there
+//  and merges it into this device. The server holds only ciphertext.
 //
 
 import Combine
@@ -43,14 +44,25 @@ public final class WebDAVSync: ObservableObject {
 
     @Published public private(set) var status: Status = .off
     @Published public private(set) var connectionTest: ConnectionTest = .idle
+
+    /// Automatic upload is on. Upload and Download in Settings work whether it
+    /// is on or off.
     @Published public private(set) var isOn = false
 
-    /// The file's address on the server, for example
-    /// https://dav.example.com/tamio/sync.bin.
+    /// The WebDAV server's address, such as https://dav.example.com/.
     @Published public var serverURL: String {
         didSet {
             guard serverURL != oldValue else { return }
             defaults.set(serverURL, forKey: Key.url)
+            configureChanged()
+        }
+    }
+
+    /// The file's path under that address, such as Tamio/sync.bin.
+    @Published public var remotePath: String {
+        didSet {
+            guard remotePath != oldValue else { return }
+            defaults.set(remotePath, forKey: Key.path)
             configureChanged()
         }
     }
@@ -63,14 +75,65 @@ public final class WebDAVSync: ObservableObject {
         }
     }
 
-    /// The WebDAV account's password. Kept encrypted with the app's key.
-    @Published public var password: String {
+    /// Sent as the request's User-Agent when not empty; some servers want one
+    /// they recognize.
+    @Published public var userAgent: String {
         didSet {
-            guard password != oldValue else { return }
-            store.storeEncryptedDefault(to: .webDAVPassword, with: Secret(value: password))
+            guard userAgent != oldValue else { return }
+            defaults.set(userAgent, forKey: Key.userAgent)
             configureChanged()
         }
     }
+
+    /// The WebDAV account's password. Kept encrypted with the app's key when
+    /// the user asks for it to be remembered.
+    @Published public var password: String {
+        didSet {
+            guard password != oldValue else { return }
+            if remembersPassword {
+                store.storeEncryptedDefault(to: .webDAVPassword, with: Secret(value: password))
+            }
+            configureChanged()
+        }
+    }
+
+    @Published public var remembersPassword: Bool {
+        didSet {
+            guard remembersPassword != oldValue else { return }
+            defaults.set(remembersPassword, forKey: Key.rememberPassword)
+            if remembersPassword {
+                store.storeEncryptedDefault(to: .webDAVPassword, with: Secret(value: password))
+            } else {
+                store.removeDefault(.webDAVPassword)
+            }
+        }
+    }
+
+    /// How often automatic upload runs, in minutes.
+    @Published public var uploadInterval: Int {
+        didSet {
+            guard uploadInterval >= 1, uploadInterval != oldValue else { return }
+            defaults.set(uploadInterval, forKey: Key.interval)
+            if isOn {
+                startPolling()
+            }
+        }
+    }
+
+    public static let uploadIntervals = [5, 10, 15, 30, 60, 120]
+    public static let minimumPassphraseLength = 8
+
+    /// A kind turned on or off: what this device knew of it is forgotten, so
+    /// turned on again it starts from what is stored.
+    private func kindChanged(_ value: Bool, _ old: Bool, _ key: String, forget: (inout SyncState) -> Void) {
+        guard value != old else { return }
+        defaults.set(value, forKey: key)
+        forget(&state)
+        generation += 1
+    }
+
+    /// The last upload or download that finished, kept across launches.
+    @Published public private(set) var lastSynced: Date?
 
     @Published public var syncsServers: Bool {
         didSet { kindChanged(syncsServers, oldValue, Key.servers) { $0.machines = [:] } }
@@ -106,26 +169,15 @@ public final class WebDAVSync: ObservableObject {
         didSet { preferenceValues = readPreferences() }
     }
 
-    public static let minimumPassphraseLength = 8
-    /// No WebDAV server pushes changes, so while sync is on Tamio asks it this
-    /// often; changes here are also sent two seconds after they settle, and on
-    /// the app becoming active again.
-    public static let pollInterval: UInt64 = 180_000_000_000
-
-    /// A kind turned on or off: what this device knew of it is forgotten, so
-    /// turned on again it starts from what is stored.
-    private func kindChanged(_ value: Bool, _ old: Bool, _ key: String, forget: (inout SyncState) -> Void) {
-        guard value != old else { return }
-        defaults.set(value, forKey: key)
-        forget(&state)
-        generation += 1
-        sync()
-    }
-
     private enum Key {
         static let on = "sb.moe.tamio.webdav.enabled"
         static let url = "sb.moe.tamio.webdav.url"
+        static let path = "sb.moe.tamio.webdav.path"
         static let username = "sb.moe.tamio.webdav.username"
+        static let userAgent = "sb.moe.tamio.webdav.userAgent"
+        static let rememberPassword = "sb.moe.tamio.webdav.rememberPassword"
+        static let interval = "sb.moe.tamio.webdav.interval"
+        static let lastSynced = "sb.moe.tamio.webdav.lastSynced"
         static let servers = "sb.moe.tamio.webdav.servers"
         static let identities = "sb.moe.tamio.webdav.identities"
         static let snippets = "sb.moe.tamio.webdav.snippets"
@@ -137,6 +189,11 @@ public final class WebDAVSync: ObservableObject {
 
     private struct Secret: Codable {
         var value: String
+    }
+
+    private enum Intent {
+        case upload
+        case download
     }
 
     private let store = TamioStore.shared
@@ -156,7 +213,7 @@ public final class WebDAVSync: ObservableObject {
     private var preferenceValues: [PreferenceItem] = []
     private var key: SyncCipher.Key?
     private var running = false
-    private var pending = false
+    private var pending: Intent?
     /// A delete of the server's file is under way; no round may put it back.
     private var deleting = false
     private var replacesNext = false
@@ -169,23 +226,50 @@ public final class WebDAVSync: ObservableObject {
     private var generation = 0
     private var observers: Set<AnyCancellable> = []
     private var poll: Task<Void, Never>?
-    private var configureTask: Task<Void, Never>?
     private var roundTask: Task<Void, Never>?
     /// Tells the result of an older Test Connection from the current one.
     private var testToken = UUID()
 
     private init() {
         defaults.register(defaults: [
+            Key.path: "Tamio/sync.bin",
+            Key.rememberPassword: true,
+            Key.interval: 30,
             Key.servers: true, Key.identities: true, Key.snippets: true,
             Key.portForwards: true, Key.knownHosts: true, Key.activity: true,
             Key.settings: true,
         ])
         isOn = defaults.bool(forKey: Key.on)
-        serverURL = defaults.string(forKey: Key.url) ?? ""
+        let savedURL = defaults.string(forKey: Key.url) ?? ""
+        let storedPath = defaults.object(forKey: Key.path) as? String
+        let address: String
+        let path: String
+        if storedPath == nil,
+           let url = URL(string: savedURL), url.path != "/", !url.path.isEmpty,
+           url.lastPathComponent.contains(".")
+        {
+            // 0.2.34 saved the whole file address; split it into address and path.
+            address = url.deletingLastPathComponent().absoluteString
+            path = url.lastPathComponent
+            defaults.set(address, forKey: Key.url)
+            defaults.set(path, forKey: Key.path)
+        } else {
+            address = savedURL
+            path = storedPath ?? "Tamio/sync.bin"
+        }
+        serverURL = address
+        remotePath = path
         username = defaults.string(forKey: Key.username) ?? ""
-        password = store.readEncryptedDefault(from: .webDAVPassword, Secret(value: ""))?.value ?? ""
+        userAgent = defaults.string(forKey: Key.userAgent) ?? ""
+        let remembers = defaults.bool(forKey: Key.rememberPassword)
+        remembersPassword = remembers
+        password = remembers
+            ? store.readEncryptedDefault(from: .webDAVPassword, Secret(value: ""))?.value ?? ""
+            : ""
         let savedPassphrase = store.readEncryptedDefault(from: .webDAVPassphrase, Secret(value: ""))?.value
         passphrase = savedPassphrase.flatMap { $0.isEmpty ? nil : $0 }
+        uploadInterval = max(1, defaults.integer(forKey: Key.interval))
+        lastSynced = defaults.object(forKey: Key.lastSynced) as? Date
         syncsServers = defaults.bool(forKey: Key.servers)
         syncsIdentities = defaults.bool(forKey: Key.identities)
         syncsSnippets = defaults.bool(forKey: Key.snippets)
@@ -206,12 +290,23 @@ public final class WebDAVSync: ObservableObject {
             return String(localized: "Tamio could not read its key from the keychain, so nothing is saved or synced.")
         }
         if serverURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return String(localized: "Enter the address of the file on your WebDAV server.")
+            return String(localized: "Enter the WebDAV server's address.")
         }
-        guard let configuration else {
-            return String(localized: "Enter a valid https:// address to the file.")
+        guard let base = URL(string: serverURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let scheme = base.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              base.host?.isEmpty == false
+        else {
+            return String(localized: "Enter a valid WebDAV address.")
         }
-        return configuration.problem
+        if remotePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return String(localized: "Enter the file's path on the server.")
+        }
+        guard let fileURL else {
+            return String(localized: "Enter a valid file path.")
+        }
+        return WebDAVConfiguration(
+            url: fileURL, username: username, password: password, userAgent: userAgent
+        ).problem
     }
 
     /// Why sync cannot be turned on yet, in a sentence; nil when it can.
@@ -223,6 +318,11 @@ public final class WebDAVSync: ObservableObject {
             return String(localized: "Choose a passphrase to encrypt what is stored.")
         }
         return nil
+    }
+
+    /// The passphrase in use, for the user to see or type on another device.
+    public var currentPassphrase: String? {
+        passphrase
     }
 
     // MARK: - Connection test
@@ -237,7 +337,7 @@ public final class WebDAVSync: ObservableObject {
             return
         }
         guard let configuration else {
-            connectionTest = .failed(String(localized: "Enter a valid https:// address to the file."))
+            connectionTest = .failed(String(localized: "Enter a valid WebDAV address."))
             return
         }
         connectionTest = .testing
@@ -257,67 +357,45 @@ public final class WebDAVSync: ObservableObject {
         }
     }
 
-    /// The passphrase in use, for the user to see or type on another device.
-    public var currentPassphrase: String? {
-        passphrase
-    }
-
     // MARK: - Settings
 
-    /// Turns sync on with the settings and passphrase entered.
+    /// Turns automatic upload on, and sends this device once now.
     public func turnOn() {
         if let problem = setupProblem {
             status = .needsSetup(problem)
             return
         }
-        guard !isOn else {
-            sync()
-            return
-        }
+        guard !isOn else { return }
         isOn = true
         defaults.set(true, forKey: Key.on)
-        generation += 1
         startPolling()
-        sync()
+        uploadIfIdle()
     }
 
-    /// Stops syncing here. What is on the server, and on this device, stays.
+    /// Stops automatic upload. A round already running still finishes; Upload
+    /// and Download in Settings keep working.
     public func turnOff() {
         isOn = false
         defaults.set(false, forKey: Key.on)
         poll?.cancel()
         poll = nil
-        configureTask?.cancel()
-        configureTask = nil
-        roundTask?.cancel()
-        roundTask = nil
-        running = false
-        pending = false
-        deleting = false
-        replacesNext = false
-        replacingPassphrase = nil
-        status = .off
     }
 
     /// Sets or changes the passphrase that seals the document. Changing it
-    /// while sync is on re-seals the server's file under the new one, after
-    /// merging what is there if the old key is still known.
+    /// while automatic upload is on sends the file again, sealed under the new
+    /// one, after merging what is there if the old key is still known.
     public func setPassphrase(_ new: String) {
         guard new.count >= Self.minimumPassphraseLength, new != passphrase else { return }
         let old = key
         let oldPassphrase = passphrase
         passphrase = new
         store.storeEncryptedDefault(to: .webDAVPassphrase, with: Secret(value: new))
+        key = old
+        replacingPassphrase = oldPassphrase
+        replacesNext = true
+        generation += 1
         if isOn {
-            // The old key, or the old passphrase, reads the server's file one
-            // last time in this round.
-            key = old
-            replacingPassphrase = oldPassphrase
-            replacesNext = true
-            generation += 1
-            sync()
-        } else {
-            key = nil
+            upload()
         }
     }
 
@@ -330,13 +408,11 @@ public final class WebDAVSync: ObservableObject {
         replacesNext = false
         replacingPassphrase = nil
         store.storeEncryptedDefault(to: .webDAVPassphrase, with: Secret(value: new))
-        if isOn {
-            sync()
-        }
+        download()
     }
 
-    /// Removes the file from the server and stops syncing here. The settings,
-    /// passphrase and this device's data stay, so sync can be turned on again.
+    /// Removes the file from the server and stops automatic upload. The
+    /// settings, passphrase and this device's data stay.
     public func deleteStoredData() {
         guard let configuration else {
             turnOff()
@@ -345,6 +421,7 @@ public final class WebDAVSync: ObservableObject {
         roundTask?.cancel()
         roundTask = nil
         running = false
+        pending = nil
         deleting = true
         let client = WebDAVClient(configuration: configuration)
         Task { [weak self] in
@@ -356,6 +433,7 @@ public final class WebDAVSync: ObservableObject {
                 return
             }
             self?.turnOff()
+            self?.deleting = false
         }
     }
 
@@ -387,64 +465,48 @@ public final class WebDAVSync: ObservableObject {
                 MainActor.assumeIsolated { self?.generation += 1 }
             }
             .store(in: &observers)
-        changes
-            .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
-            .sink { [weak self] in
-                MainActor.assumeIsolated { self?.sync() }
-            }
-            .store(in: &observers)
-        #if canImport(UIKit)
-            let becameActive = UIApplication.didBecomeActiveNotification
-        #else
-            let becameActive = NSApplication.didBecomeActiveNotification
-        #endif
-        NotificationCenter.default.publisher(for: becameActive)
-            .sink { [weak self] _ in
-                MainActor.assumeIsolated { self?.sync() }
-            }
-            .store(in: &observers)
         if isOn {
             startPolling()
-            sync()
+            uploadIfIdle()
         }
     }
 
-    /// One round: read the server's file, merge, write it back if it changed.
-    public func sync() {
-        guard isOn else {
-            status = .off
+    /// Uploads this device to the server, merging what is there first.
+    public func upload() {
+        begin(.upload)
+    }
+
+    /// Downloads what is on the server into this device, without uploading
+    /// anything. Newer changes here are kept.
+    public func download() {
+        begin(.download)
+    }
+
+    private func begin(_ intent: Intent) {
+        if deleting {
             return
         }
-        guard !deleting else { return }
         if let problem = setupProblem {
             status = .needsSetup(problem)
             return
         }
-        guard let configuration else {
-            status = .needsSetup(setupProblem ?? String(localized: "Enter a valid https:// address to the file."))
-            return
-        }
-        if let problem = configuration.problem {
-            status = .failed(problem)
-            return
-        }
-        guard let passphrase, !passphrase.isEmpty else {
+        guard let configuration, let passphrase, !passphrase.isEmpty else {
             status = .needsSetup(String(localized: "Choose a passphrase to encrypt what is stored."))
             return
         }
         if running {
-            pending = true
+            pending = intent
             return
         }
         running = true
-        if case .synced = status {} else {
-            status = .syncing
-        }
+        status = .syncing
         let read = generation
-        let replacing = replacesNext
-        let oldPassphrase = replacingPassphrase
-        replacesNext = false
-        replacingPassphrase = nil
+        let replacing = intent == .upload && replacesNext
+        let oldPassphrase = intent == .upload ? replacingPassphrase : nil
+        if intent == .upload {
+            replacesNext = false
+            replacingPassphrase = nil
+        }
 
         roundTask = Task { [weak self] in
             guard let self else { return }
@@ -454,13 +516,13 @@ public final class WebDAVSync: ObservableObject {
                 remote = try await client.read()
             } catch {
                 running = false
-                pending = false
-                if isOn, !Task.isCancelled {
+                pending = nil
+                if !Task.isCancelled {
                     status = .failed(error.localizedDescription)
                 }
                 return
             }
-            guard isOn, !Task.isCancelled else {
+            guard !Task.isCancelled, !deleting else {
                 running = false
                 return
             }
@@ -468,63 +530,79 @@ public final class WebDAVSync: ObservableObject {
                 remote: remote, replacesRemote: replacing, replacingPassphrase: oldPassphrase
             )
             let outcome = await Task.detached(priority: .utility) { SyncSession.run(input) }.value
-            guard isOn, !Task.isCancelled else {
+            guard !Task.isCancelled, !deleting else {
                 running = false
                 return
             }
             if read == generation {
-                await finish(outcome, client: client)
+                await finish(outcome, intent: intent, client: client)
             } else {
                 // Something was edited meanwhile: what the round worked out
                 // is about data that is gone.
-                replacesNext = replacesNext || replacing
-                if replacingPassphrase == nil {
-                    replacingPassphrase = oldPassphrase
+                if intent == .upload {
+                    replacesNext = replacesNext || replacing
+                    if replacingPassphrase == nil {
+                        replacingPassphrase = oldPassphrase
+                    }
                 }
-                pending = true
+                if pending == nil {
+                    pending = intent
+                }
             }
             running = false
-            if pending {
-                pending = false
-                sync()
+            if let next = pending {
+                pending = nil
+                begin(next)
             }
         }
+    }
+
+    private func uploadIfIdle() {
+        guard !running, pending == nil else { return }
+        upload()
     }
 
     private func startPolling() {
         poll?.cancel()
         poll = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: Self.pollInterval)
+                let minutes = max(1, self?.uploadInterval ?? 30)
+                try? await Task.sleep(nanoseconds: UInt64(minutes) * 60_000_000_000)
                 guard !Task.isCancelled else { return }
-                self?.sync()
+                self?.uploadIfIdle()
             }
         }
     }
 
     private func configureChanged() {
-        guard isOn else {
-            testToken = UUID()
-            connectionTest = .idle
-            return
-        }
-        // A round already reading an older address or password must not put
-        // its result in place.
-        generation += 1
         testToken = UUID()
         connectionTest = .idle
-        configureTask?.cancel()
-        configureTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            guard !Task.isCancelled else { return }
-            self?.sync()
+        // A round already reading an older address, account or path must not
+        // put its result in place.
+        generation += 1
+        if isOn {
+            startPolling()
         }
     }
 
-    private var configuration: WebDAVConfiguration? {
+    private var fileURL: URL? {
         let address = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: address), url.scheme != nil else { return nil }
-        return WebDAVConfiguration(url: url, username: username, password: password)
+        guard let base = URL(string: address), base.scheme != nil, base.host?.isEmpty == false else {
+            return nil
+        }
+        let path = remotePath
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: "/", omittingEmptySubsequences: true)
+            .filter { $0 != "." && $0 != ".." }
+        guard !path.isEmpty else { return nil }
+        return base.appending(path: path.joined(separator: "/"))
+    }
+
+    private var configuration: WebDAVConfiguration? {
+        guard let fileURL else { return nil }
+        return WebDAVConfiguration(
+            url: fileURL, username: username, password: password, userAgent: userAgent
+        )
     }
 
     private func makeInput(
@@ -571,8 +649,7 @@ public final class WebDAVSync: ObservableObject {
         return true
     }
 
-    private func finish(_ outcome: SyncOutcome, client: WebDAVClient) async {
-        guard isOn else { return }
+    private func finish(_ outcome: SyncOutcome, intent: Intent, client: WebDAVClient) async {
         switch outcome {
         case .locked:
             status = .locked
@@ -651,19 +728,35 @@ public final class WebDAVSync: ObservableObject {
             for entry in done.activity {
                 AgentServer.shared.log.merge(entry)
             }
-            state = done.state
-            if let upload = done.upload {
-                guard isOn else { return }
-                do {
-                    try await client.write(upload)
-                } catch {
-                    if isOn {
+
+            if intent == .upload {
+                if let upload = done.upload {
+                    do {
+                        try await client.write(upload)
+                    } catch {
                         status = .failed(error.localizedDescription)
+                        return
                     }
-                    return
                 }
+                // Only now is what this device has on the server; a download
+                // leaves the local changes it kept as changes still to send.
+                state = done.state
+            } else {
+                // The server's stamps, so an edit here after this download is
+                // still told apart from what arrived.
+                var merged = state
+                merged.machines.merge(done.pulledState.machines) { _, theirs in theirs }
+                merged.identities.merge(done.pulledState.identities) { _, theirs in theirs }
+                merged.snippets.merge(done.pulledState.snippets) { _, theirs in theirs }
+                merged.portForwards.merge(done.pulledState.portForwards) { _, theirs in theirs }
+                merged.knownHosts.merge(done.pulledState.knownHosts) { _, theirs in theirs }
+                merged.preferences.merge(done.pulledState.preferences) { _, theirs in theirs }
+                state = merged
             }
-            status = .synced(Date())
+            let now = Date()
+            lastSynced = now
+            defaults.set(now, forKey: Key.lastSynced)
+            status = .synced(now)
         }
     }
 }

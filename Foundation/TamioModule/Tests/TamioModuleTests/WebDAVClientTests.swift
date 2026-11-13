@@ -118,4 +118,19 @@ final class WebDAVClientTests: XCTestCase {
         try await client.write(nil)
         XCTAssertEqual(Mock.requests.map(\.httpMethod), ["DELETE"])
     }
+
+    func testTheUserAgentIsSentWhenSet() async throws {
+        Mock.handler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "Zotero/10.0.0")
+            return (404, nil)
+        }
+        let configuration = try WebDAVConfiguration(
+            url: XCTUnwrap(URL(string: "https://dav.example.com/tamio/sync.bin")),
+            username: "tamio",
+            password: "secret",
+            userAgent: "Zotero/10.0.0"
+        )
+        let client = WebDAVClient(configuration: configuration, session: session)
+        _ = try await client.read()
+    }
 }

@@ -66,6 +66,9 @@ enum SyncOutcome: Sendable {
         /// Activity of other devices to add to this one's log.
         var activity: [AgentActivity] = []
         var state: SyncState
+        /// What the server held, stamped for a device that only downloads:
+        /// the next upload still tells an edit made here from what arrived.
+        var pulledState = SyncState()
         var key: SyncCipher.Key
         /// The envelope to store, when it changed.
         var upload: Data?
@@ -133,6 +136,34 @@ enum SyncSession {
         var dirty = !stored
         var done = SyncOutcome.Done(machines: [], identities: [], state: state, key: sealing)
 
+        // What the server held, for a download that only applies it: stamps
+        // there let the next upload tell edits here from what arrived.
+        if stored {
+            func stamps(_ entries: [String: SyncDocument.Entry<some SyncItem>]) -> [String: SyncState.Stamp] {
+                entries.mapValues { entry in
+                    SyncState.Stamp(digest: entry.value.map { SyncMerge.digest($0) }, modified: entry.modified)
+                }
+            }
+            if input.syncsMachines {
+                done.pulledState.machines = stamps(document.machines)
+            }
+            if input.syncsIdentities {
+                done.pulledState.identities = stamps(document.identities)
+            }
+            if input.syncsSnippets {
+                done.pulledState.snippets = stamps(document.snippets)
+            }
+            if input.syncsPortForwards {
+                done.pulledState.portForwards = stamps(document.portForwards)
+            }
+            if input.syncsKnownHosts {
+                done.pulledState.knownHosts = stamps(document.knownHosts)
+            }
+            if input.syncsPreferences {
+                done.pulledState.preferences = stamps(document.preferences)
+            }
+        }
+
         // Each kind is merged on its own; one that is not synced here is
         // passed on as it was stored.
         func merge<Value: SyncItem>(
@@ -157,7 +188,9 @@ enum SyncSession {
         let foreign = document.preferences.values.compactMap(\.value).filter { !input.preferenceKeys.contains($0.key) }
         merge(input.syncsPreferences, input.preferences + foreign, \.preferences, \.preferences, \.preferences)
         done.preferences.removeAll { change in
-            if case let .put(item) = change { return !input.preferenceKeys.contains(item.key) }
+            if case let .put(item) = change {
+                return !input.preferenceKeys.contains(item.key)
+            }
             return false
         }
         if input.syncsActivity {

@@ -14,6 +14,9 @@ struct WebDAVConfiguration: Equatable, Sendable {
     var url: URL
     var username: String
     var password: String
+    /// Sent as the request's User-Agent when not empty; some servers refuse
+    /// clients they do not recognize without one.
+    var userAgent: String = ""
 
     /// Why this cannot be used, in a sentence; nil when it can.
     var problem: String? {
@@ -190,6 +193,9 @@ struct WebDAVClient {
         var request = URLRequest(url: url ?? configuration.url)
         request.httpMethod = method
         request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
+        if !configuration.userAgent.isEmpty {
+            request.setValue(configuration.userAgent, forHTTPHeaderField: "User-Agent")
+        }
         if !configuration.username.isEmpty {
             let login = "\(configuration.username):\(configuration.password)"
             request.setValue(

@@ -13,6 +13,20 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.35] - 2026-11-13
+
+### Changed
+- **WebDAV uploads and downloads are separate.** Upload merges what is on
+  the server and sends this device's servers, identities (passwords and
+  private keys included), snippets, port forwards, known hosts, settings and
+  agent activity. Download merges the server's copy into this device without
+  uploading, after a confirmation. Automatic upload runs when enabled and
+  every chosen number of minutes while Tamio is open; downloading is manual.
+- **The WebDAV setup takes an address and a path.** The server address and
+  the file's path are separate fields; an optional User-Agent is sent when
+  the server wants one, the WebDAV password can be remembered, and the last
+  successful sync is shown.
+
 ## [0.2.34] - 2026-11-13
 
 ### Added

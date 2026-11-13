@@ -3,8 +3,8 @@
 //  TamioModuleTests
 //
 
-@testable import TamioModule
 import CryptoKit
+@testable import TamioModule
 import XCTest
 
 /// A device as sync sees it: its items, what it last knew, and its passphrase.
@@ -50,19 +50,25 @@ private struct Device {
         }
         state = done.state
         key = done.key
-        if let upload = done.upload { cloud = upload }
+        if let upload = done.upload {
+            cloud = upload
+        }
         return outcome
     }
 }
 
 private func uploaded(_ outcome: SyncOutcome) -> Bool {
-    if case let .done(done) = outcome { return done.upload != nil }
+    if case let .done(done) = outcome {
+        return done.upload != nil
+    }
     return false
 }
 
 final class SyncTests: XCTestCase {
     private let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
-    private func time(_ seconds: TimeInterval) -> Date { start.addingTimeInterval(seconds) }
+    private func time(_ seconds: TimeInterval) -> Date {
+        start.addingTimeInterval(seconds)
+    }
 
     private func machine(_ name: String) -> RDMachine {
         RDMachine(remoteAddress: "192.0.2.1", remotePort: "22", name: name)
@@ -130,6 +136,38 @@ final class SyncTests: XCTestCase {
             return false
         }, "what the old passphrase opened is merged, not replaced away")
         XCTAssertTrue(done.upload != nil)
+    }
+
+    func testADownloadLeavesAnEditHereToUpload() {
+        var cloud: Data?
+        var server = Device(), client = Device()
+        server.machines = [machine("alpha")]
+        server.sync(&cloud, at: time(0))
+
+        // The client pulls what the server holds. A download keeps the
+        // server's stamps, so the edit below is still seen as this device's.
+        var input = SyncInput(
+            machines: client.machines, identities: [], state: client.state,
+            passphrase: client.passphrase, remote: cloud, key: client.key
+        )
+        input.now = time(1)
+        input.rounds = 1000
+        input.minimumRounds = 1000
+        guard case let .done(done) = SyncSession.run(input) else {
+            return XCTFail("the download round failed")
+        }
+        for change in done.machines {
+            if case let .put(machine) = change {
+                client.machines.append(machine)
+            }
+        }
+        client.state.machines.merge(done.pulledState.machines) { _, theirs in theirs }
+        client.key = done.key
+
+        client.machines[0].name = "from the client"
+        client.sync(&cloud, at: time(2))
+        server.sync(&cloud, at: time(3))
+        XCTAssertEqual(server.machines.first?.name, "from the client")
     }
 
     func testBothDevicesKeepWhatEachAdded() {
