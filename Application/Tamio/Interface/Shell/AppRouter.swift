@@ -261,9 +261,9 @@ final class AppRouter: ObservableObject {
     }
 
     /// Closes the page the window shows now: ⌘W. Another open page of the
-    /// same server takes its place — the neighbour before it, else the next
-    /// one — and closing the last one leaves the server. Nothing to close on
-    /// the other pages.
+    /// same server takes its place — the one after it, else the neighbour
+    /// before it — and closing the last one leaves the server. Nothing to
+    /// close on the other pages.
     @MainActor
     func closeCurrentSession() {
         guard let owner = owner(of: route), let index = routes(of: owner).firstIndex(of: route) else { return }
@@ -288,7 +288,7 @@ final class AppRouter: ObservableObject {
         guard !remaining.contains(order[index]) else { return }
         let before = order[..<index].last { remaining.contains($0) }
         let after = order[(index + 1)...].first { remaining.contains($0) }
-        if let neighbour = before ?? after { route = neighbour }
+        if let neighbour = after ?? before { route = neighbour }
     }
 
     /// Closes every session of a server or Quick Connect terminal.

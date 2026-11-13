@@ -13,6 +13,14 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.32] - 2026-11-13
+
+### Changed
+- **Closing a session moves to the next one.** On a server with several pages
+  open, ⌘W now shows the page after the one it closed — closing Terminal
+  shows Files, closing Files shows Monitor — and only the last page falls
+  back to the one before it. Closing the only page still returns Home.
+
 ## [0.2.31] - 2026-11-12
 
 ### Fixed
