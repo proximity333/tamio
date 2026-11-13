@@ -38,8 +38,10 @@ struct SyncInput: Sendable {
     var syncsActivity = true
     /// Seal under a new key from `passphrase`, whatever is stored. What is
     /// stored is merged first if `key`, the one in use until now, still opens
-    /// it; otherwise this device's data takes its place.
+    /// it, or else if `replacingPassphrase`, the old one, still does;
+    /// otherwise this device's data takes its place.
     var replacesRemote = false
+    var replacingPassphrase: String?
     var now = Date()
     var rounds = SyncCipher.rounds
     var minimumRounds = SyncCipher.minimumRounds
@@ -77,14 +79,23 @@ enum SyncSession {
         var stored = false
 
         if input.replacesRemote {
-            if let remote = input.remote, let old = input.key,
+            if let remote = input.remote,
                let envelope = try? JSONDecoder().decode(SyncEnvelope.self, from: remote),
                envelope.version <= SyncEnvelope.currentVersion,
-               envelope.salt == old.salt, envelope.rounds == old.rounds,
-               let plain = try? SyncCipher.open(envelope, with: old),
-               let decoded = try? JSONDecoder().decode(SyncDocument.self, from: plain)
+               (input.minimumRounds ... SyncCipher.maximumRounds).contains(envelope.rounds),
+               envelope.salt.count >= 8
             {
-                document = decoded
+                var old = input.key
+                if old == nil, let passphrase = input.replacingPassphrase, !passphrase.isEmpty {
+                    old = SyncCipher.key(passphrase: passphrase, salt: envelope.salt, rounds: envelope.rounds)
+                }
+                if let old,
+                   envelope.salt == old.salt, envelope.rounds == old.rounds,
+                   let plain = try? SyncCipher.open(envelope, with: old),
+                   let decoded = try? JSONDecoder().decode(SyncDocument.self, from: plain)
+                {
+                    document = decoded
+                }
             }
         } else if let remote = input.remote {
             guard let envelope = try? JSONDecoder().decode(SyncEnvelope.self, from: remote) else {

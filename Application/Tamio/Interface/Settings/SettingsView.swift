@@ -35,8 +35,8 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "general.files", keywords: "files sftp hidden dot files show") {
                     FilesSettings()
                 },
-                ConfigHostSettingsSection(id: "general.sync", keywords: "icloud sync cloud encrypted passphrase servers identities credentials devices") {
-                    CloudSyncSettings()
+                ConfigHostSettingsSection(id: "general.sync", keywords: "webdav sync remote encrypted passphrase servers identities credentials passwords keys devices") {
+                    WebDAVSyncSettings()
                 },
                 ConfigHostSettingsSection(id: "connection.ssh", keywords: "ssh timeout connect wait host key known hosts fingerprint") {
                     SSHSettings().environmentObject(store)

@@ -67,6 +67,9 @@ public extension TamioStore {
         case openInterfaceAutomatically
         case syncPassphrase
         case syncState
+        case webDAVPassword
+        case webDAVPassphrase
+        case webDAVSyncState
     }
 
     /// Nil means one of two things: nothing was ever stored, or what was

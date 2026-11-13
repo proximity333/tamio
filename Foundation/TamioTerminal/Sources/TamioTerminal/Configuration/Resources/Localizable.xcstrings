@@ -2821,18 +2821,17 @@
       }
     },
     "group.sync.title": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud Sync"
+            "value": "WebDAV Sync"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "iCloud 同步"
+            "value": "WebDAV 同步"
           }
         }
       }
@@ -8017,6 +8016,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "❯ tamio ~/project"
+          }
+        }
+      }
+    },
+    "WebDAV Sync": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebDAV Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebDAV 同步"
           }
         }
       }

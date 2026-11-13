@@ -21295,6 +21295,822 @@
           }
         }
       }
+    },
+    "Enter the address of the file on your WebDAV server.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the address of the file on your WebDAV server."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入 WebDAV 服务器上该文件的地址。"
+          }
+        }
+      }
+    },
+    "Enter the user name and password in their own fields, not in the address.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the user name and password in their own fields, not in the address."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在各自的输入框中填写用户名和密码，不要写进地址。"
+          }
+        }
+      }
+    },
+    "The address must begin with https://.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The address must begin with https://."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "地址必须以 https:// 开头。"
+          }
+        }
+      }
+    },
+    "WebDAV needs an https:// address, so the password is not sent in the clear.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebDAV needs an https:// address, so the password is not sent in the clear."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebDAV 需要使用 https:// 地址，以免密码以明文发送。"
+          }
+        }
+      }
+    },
+    "Enter the file's address, not its folder's.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the file's address, not its folder's."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请填写文件的地址，而不是文件夹的地址。"
+          }
+        }
+      }
+    },
+    "Enter both your WebDAV user name and password, or neither.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter both your WebDAV user name and password, or neither."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请同时填写 WebDAV 用户名和密码，或两者都留空。"
+          }
+        }
+      }
+    },
+    "The server refused the user name or password.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server refused the user name or password."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器拒绝了用户名或密码。"
+          }
+        }
+      }
+    },
+    "The server refused access to this file.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server refused access to this file."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器拒绝访问该文件。"
+          }
+        }
+      }
+    },
+    "The server redirected to another address. Enter the file's final address.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server redirected to another address. Enter the file's final address."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器重定向到了其他地址。请填写文件的最终地址。"
+          }
+        }
+      }
+    },
+    "The file's folder does not exist. Create it on the server, or enter the file's full address.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file's folder does not exist. Create it on the server, or enter the file's full address."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件所在的文件夹不存在。请在服务器上创建该文件夹，或填写文件的完整地址。"
+          }
+        }
+      }
+    },
+    "The server answered with status %lld.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server answered with status %lld."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器返回了状态码 %lld。"
+          }
+        }
+      }
+    },
+    "The file is larger than Tamio will read.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file is larger than Tamio will read."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件大小超出了 Tamio 可读取的范围。"
+          }
+        }
+      }
+    },
+    "Could not reach the server: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not reach the server: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法连接服务器：%@"
+          }
+        }
+      }
+    },
+    "Enter a valid https:// address to the file.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid https:// address to the file."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入有效的 https:// 文件地址。"
+          }
+        }
+      }
+    },
+    "Choose a passphrase to encrypt what is stored.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a passphrase to encrypt what is stored."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请设置一个用于加密存储内容的密码短语。"
+          }
+        }
+      }
+    },
+    "What is on the server was written by a newer version of Tamio. Update Tamio on this device.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is on the server was written by a newer version of Tamio. Update Tamio on this device."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器上的内容由更新版本的 Tamio 写入。请更新此设备上的 Tamio。"
+          }
+        }
+      }
+    },
+    "Sync with WebDAV": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync with WebDAV"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 WebDAV 同步"
+          }
+        }
+      }
+    },
+    "Your servers, identities and settings in one file on your WebDAV server, sealed on this device before they leave it. Passwords and private keys travel inside the sealed file. The server holds only ciphertext.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your servers, identities and settings in one file on your WebDAV server, sealed on this device before they leave it. Passwords and private keys travel inside the sealed file. The server holds only ciphertext."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的服务器、身份和设置会保存在 WebDAV 服务器上的一个文件中，离开此设备前已在本机加密。密码和私钥都包含在加密文件中。服务器上只有密文。"
+          }
+        }
+      }
+    },
+    "The file's full address on your WebDAV server. Tamio creates its folder if the server allows it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file's full address on your WebDAV server. Tamio creates its folder if the server allows it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件在 WebDAV 服务器上的完整地址。如果服务器允许，Tamio 会创建其文件夹。"
+          }
+        }
+      }
+    },
+    "The WebDAV account's user name. Leave both empty for a server that needs no sign-in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The WebDAV account's user name. Leave both empty for a server that needs no sign-in."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WebDAV 账户的用户名。无需登录的服务器可以将用户名和密码都留空。"
+          }
+        }
+      }
+    },
+    "Kept encrypted on this device, and sent only to the server.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept encrypted on this device, and sent only to the server."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此设备上加密保存，仅发送到该服务器。"
+          }
+        }
+      }
+    },
+    "It opens the file on the server. Use the same one on your other devices.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It opens the file on the server. Use the same one on your other devices."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用于打开服务器上的文件。请在其他设备上使用同一个密码短语。"
+          }
+        }
+      }
+    },
+    "Choose a passphrase. It is the only key to what is on the server, and cannot be recovered if you forget it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a passphrase. It is the only key to what is on the server, and cannot be recovered if you forget it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请设置密码短语。它是打开服务器内容的唯一钥匙，忘记后无法找回。"
+          }
+        }
+      }
+    },
+    "The passphrase here does not open what is on the server. Set the one your other devices use, or replace what is stored with this device's data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The passphrase here does not open what is on the server. Set the one your other devices use, or replace what is stored with this device's data."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此设备上的密码短语无法打开服务器上的内容。请设置其他设备使用的密码短语，或用此设备的数据替换服务器上的内容。"
+          }
+        }
+      }
+    },
+    "What is on the server cannot be read. Replace it with this device's data to go on.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is on the server cannot be read. Replace it with this device's data to go on."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取服务器上的内容。请用此设备的数据替换后继续。"
+          }
+        }
+      }
+    },
+    "Data on the server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data on the server"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器上的数据"
+          }
+        }
+      }
+    },
+    "Delete the encrypted file and stop syncing here.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the encrypted file and stop syncing here."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除加密文件并停止在此设备上同步。"
+          }
+        }
+      }
+    },
+    "Delete what Tamio keeps on the server?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete what Tamio keeps on the server?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除 Tamio 在服务器上保存的内容？"
+          }
+        }
+      }
+    },
+    "Change the Passphrase": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the Passphrase"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更改密码短语"
+          }
+        }
+      }
+    },
+    "Set…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
+          }
+        }
+      }
+    },
+    "Change": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更改"
+          }
+        }
+      }
+    },
+    "Set": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置"
+          }
+        }
+      }
+    },
+    "File": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件"
+          }
+        }
+      }
+    },
+    "User name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User name"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用户名"
+          }
+        }
+      }
+    },
+    "Encryption passphrase": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encryption passphrase"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加密密码短语"
+          }
+        }
+      }
+    },
+    "What is on the server is sealed under the new passphrase. Your other devices will need it before they can sync again. If this device cannot open what is there with the old one, what it has takes its place.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is on the server is sealed under the new passphrase. Your other devices will need it before they can sync again. If this device cannot open what is there with the old one, what it has takes its place."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器上的内容会用新密码短语重新加密。其他设备需要输入新密码短语才能继续同步。如果此设备无法用旧密码短语打开服务器内容，将用此设备的数据替换。"
+          }
+        }
+      }
+    },
+    "It encrypts your servers, identities, passwords and private keys before they leave this device. Type the same one on your other devices. It cannot be recovered if you forget it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It encrypts your servers, identities, passwords and private keys before they leave this device. Type the same one on your other devices. It cannot be recovered if you forget it."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "它会在你的服务器、身份、密码和私钥离开此设备前进行加密。请在其他设备上输入同一个密码短语。忘记后无法找回。"
+          }
+        }
+      }
+    },
+    "Enter…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入…"
+          }
+        }
+      }
+    },
+    "Unlock": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解锁"
+          }
+        }
+      }
+    },
+    "What is on the server is sealed with a passphrase from one of your other devices. Enter it here.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is on the server is sealed with a passphrase from one of your other devices. Enter it here."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器上的内容由你的另一台设备用密码短语加密。请在此输入该密码短语。"
+          }
+        }
+      }
+    },
+    "The passphrase here does not open what is on the server. Enter the one your other devices use.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The passphrase here does not open what is on the server. Enter the one your other devices use."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此设备上的密码短语无法打开服务器上的内容。请输入其他设备使用的密码短语。"
+          }
+        }
+      }
+    },
+    "Kept encrypted on this device. Sent to the server over https://; a local http:// address sends it unencrypted.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept encrypted on this device. Sent to the server over https://; a local http:// address sends it unencrypted."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此设备上加密保存。通过 https:// 发送到服务器；本地 http:// 地址会以未加密方式发送。"
+          }
+        }
+      }
+    },
+    "%@ — type it on your other devices.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — type it on your other devices."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ — 请在你的其它设备上输入。"
+          }
+        }
+      }
+    },
+    "Sync": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步"
+          }
+        }
+      }
+    },
+    "Test Connection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test Connection"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "测试连接"
+          }
+        }
+      }
+    },
+    "Checking the server…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking the server…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在检查服务器…"
+          }
+        }
+      }
+    },
+    "Connected. The server answered.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected. The server answered."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接成功，服务器已响应。"
+          }
+        }
+      }
+    },
+    "Turn on sync first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on sync first."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先开启同步。"
+          }
+        }
+      }
+    },
+    "Test the address and password, or sync now. While on, Tamio checks the server every %lld minutes and after each change.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test the address and password, or sync now. While on, Tamio checks the server every %lld minutes and after each change."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "测试地址和密码，或立即同步。开启后，Tamio 每 %lld 分钟检查一次服务器，并在每次更改后同步。"
+          }
+        }
+      }
+    },
+    "The server answered, but the file is not a Tamio sync file.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server answered, but the file is not a Tamio sync file."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器已响应，但该文件不是 Tamio 的同步文件。"
+          }
+        }
+      }
+    },
+    "Test the address and password, or sync now. While on, Tamio checks the server every %lld minutes, after each change, and when the app becomes active.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test the address and password, or sync now. While on, Tamio checks the server every %lld minutes, after each change, and when the app becomes active."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "测试地址和密码，或立即同步。开启后，Tamio 每 %lld 分钟检查一次服务器，在每次更改后同步，并在应用重新激活时同步。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

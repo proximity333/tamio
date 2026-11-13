@@ -82,6 +82,56 @@ final class SyncTests: XCTestCase {
         XCTAssertFalse(uploaded(mac.sync(&cloud, at: time(20))), "a round with no changes uploads nothing")
     }
 
+    func testIdentitiesCarryTheirPasswordsAndPrivateKeys() {
+        var cloud: Data?
+        var mac = Device(), phone = Device()
+        mac.identities = [RDIdentity(
+            username: "root",
+            password: "key passphrase",
+            privateKey: "-----BEGIN OPENSSH PRIVATE KEY-----\nsecret\n-----END OPENSSH PRIVATE KEY-----",
+            publicKey: "ssh-ed25519 AAAA"
+        )]
+
+        mac.sync(&cloud, at: time(0))
+        phone.sync(&cloud, at: time(10))
+
+        XCTAssertEqual(phone.identities.first?.password, "key passphrase")
+        XCTAssertEqual(phone.identities.first?.privateKey, mac.identities.first?.privateKey)
+        XCTAssertEqual(phone.identities.first?.publicKey, "ssh-ed25519 AAAA")
+    }
+
+    func testAChangedPassphraseStillMergesWhatTheOldOneOpened() {
+        var cloud: Data?
+        var mac = Device(), phone = Device()
+        mac.passphrase = "the old passphrase"
+        mac.machines = [machine("alpha")]
+        mac.sync(&cloud, at: time(0))
+
+        // The phone changes its passphrase without a cached key: the old
+        // passphrase alone has to open the server's file, or alpha is lost.
+        phone.passphrase = "the new passphrase"
+        phone.machines = [machine("beta")]
+        var input = SyncInput(
+            machines: phone.machines, identities: [], state: phone.state,
+            passphrase: phone.passphrase, remote: cloud, key: nil
+        )
+        input.replacesRemote = true
+        input.replacingPassphrase = "the old passphrase"
+        input.now = time(10)
+        input.rounds = 1000
+        input.minimumRounds = 1000
+        guard case let .done(done) = SyncSession.run(input) else {
+            return XCTFail("the replacement round failed")
+        }
+        XCTAssertTrue(done.machines.contains { change in
+            if case let .put(machine) = change {
+                return machine.name == "alpha"
+            }
+            return false
+        }, "what the old passphrase opened is merged, not replaced away")
+        XCTAssertTrue(done.upload != nil)
+    }
+
     func testBothDevicesKeepWhatEachAdded() {
         var cloud: Data?
         var mac = Device(), phone = Device()

@@ -15,6 +15,17 @@ the user. To release, rename that heading to the version and date
 
 ## [0.2.34] - 2026-11-13
 
+### Added
+- **Sync through WebDAV, with your own passphrase.** Servers, identities —
+  user names, passwords and private keys included — snippets, port forwards,
+  known hosts, settings and agent activity are kept in one file on your
+  WebDAV server. The file is sealed on this device under a passphrase you
+  choose, before anything is uploaded, so the server holds only ciphertext.
+
+### Changed
+- **The iCloud Sync entry is hidden for now.** Its code stays in place while
+  WebDAV is the sync offered in Settings.
+
 ### Fixed
 - **Closing a session moves through every tab, not only its server's.** The
   page after the closed one was looked for only among that server's pages, so

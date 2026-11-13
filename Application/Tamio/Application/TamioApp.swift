@@ -26,8 +26,10 @@ struct TamioApp: App {
         // Before the store: it reads the master key as it loads.
         Mac.installLegacyKeyStore()
         _ = TamioStore.shared
-        CloudSync.shared.preferences = SyncedSettings.all
-        CloudSync.shared.start()
+        // iCloud sync is hidden while WebDAV is the offered backend; its
+        // CloudSync code stays in TamioModule.
+        WebDAVSync.shared.preferences = SyncedSettings.all
+        WebDAVSync.shared.start()
         // Every server card shows live status without opening a monitor.
         LiveStatusCenter.shared.start()
         PortForwardBackend.shared.reportProblem = { Dialogs.presentError(with: $0) }
