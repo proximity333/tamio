@@ -13,6 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.33] - 2026-11-13
+
+### Fixed
+- **Closing a session from the sidebar shows the next page.** Moving to the
+  page after the one closed worked only with ⌘W; a session closed from the
+  sidebar's menu still fell back to Home with another page of the same server
+  open. However a session ends, its next page now takes its place — the
+  previous one when it was the last — and only the last page returns Home.
+
 ## [0.2.32] - 2026-11-13
 
 ### Changed

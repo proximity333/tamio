@@ -80,35 +80,71 @@ final class AppRouter: ObservableObject {
     }
 
     private var cancellables = Set<AnyCancellable>()
+    /// The pages the managers had open when the router last looked, and who
+    /// each belonged to. A close reads it to see where the page in view sat.
+    private var knownSessionRoutes: [Route] = []
+    private var knownSessionOwners: [Route: SessionOwner] = [:]
 
     private init() {
-        // When a session closes, leave its page.
-        leaveWhenSessionEnds(TerminalManager.shared.$sessionContexts) {
-            if case let .terminal(id) = $0 { return id }
-            return nil
+        // Whatever closes a session — ⌘W, the sidebar's menu, or the session
+        // ending by itself — the page after it takes its place.
+        observeSessions(TerminalManager.shared.$sessionContexts) { sessions in
+            sessions.map(Self.page)
+                + FileTransferManager.shared.transfers.map { (.transfer($0.id), .server($0.machine.id)) }
+                + MonitorCenter.shared.sessions.map { (.monitor($0.id), .server($0.machine.id)) }
         }
-        leaveWhenSessionEnds(MonitorCenter.shared.$sessions) {
-            if case let .monitor(id) = $0 { return id }
-            return nil
+        observeSessions(MonitorCenter.shared.$sessions) { sessions in
+            TerminalManager.shared.sessionContexts.map(Self.page)
+                + FileTransferManager.shared.transfers.map { (.transfer($0.id), .server($0.machine.id)) }
+                + sessions.map { (.monitor($0.id), .server($0.machine.id)) }
         }
-        leaveWhenSessionEnds(FileTransferManager.shared.$transfers) {
-            if case let .transfer(id) = $0 { return id }
-            return nil
+        observeSessions(FileTransferManager.shared.$transfers) { transfers in
+            TerminalManager.shared.sessionContexts.map(Self.page)
+                + transfers.map { (.transfer($0.id), .server($0.machine.id)) }
+                + MonitorCenter.shared.sessions.map { (.monitor($0.id), .server($0.machine.id)) }
         }
+        let pages = sessionRoutes.compactMap { route in owner(of: route).map { (route, $0) } }
+        sessionListChanged(to: pages)
     }
 
-    /// Returns to the last non-session place once the open session page's id
-    /// leaves the published list, meaning its session has closed.
-    private func leaveWhenSessionEnds<Element: Identifiable>(
+    /// A terminal's page and who it belongs to: its server, or the command
+    /// itself for a Quick Connect (or local) session.
+    private static func page(_ context: TerminalManager.Context) -> (Route, SessionOwner) {
+        (.terminal(context.id), context.remoteType == .machine ? .server(context.machine.id) : .command(context.id))
+    }
+
+    private func observeSessions<Element: Identifiable>(
         _ publisher: Published<[Element]>.Publisher,
-        id routeID: @escaping (Route) -> UUID?
+        _ pages: @escaping ([Element]) -> [(Route, SessionOwner)]
     ) where Element.ID == UUID {
         publisher
-            .sink { [weak self] sessions in
-                guard let self, let id = routeID(self.route) else { return }
-                if !sessions.contains(where: { $0.id == id }) { self.route = self.lastPlace }
+            .sink { [weak self] elements in
+                self?.sessionListChanged(to: pages(elements))
             }
             .store(in: &cancellables)
+    }
+
+    /// When the page in view leaves the open pages, the one after it takes
+    /// its place — else the one before it, else the last place.
+    private func sessionListChanged(to pages: [(Route, SessionOwner)]) {
+        let newRoutes = pages.map(\.0)
+        let oldRoutes = knownSessionRoutes
+        let oldOwners = knownSessionOwners
+        let closed = oldRoutes.contains(route) && !newRoutes.contains(route)
+        var neighbour: Route?
+        if closed, let owner = oldOwners[route] {
+            let order = oldRoutes.filter { oldOwners[$0] == owner }
+            if let index = order.firstIndex(of: route) {
+                let remaining = order.filter { newRoutes.contains($0) }
+                let after = order[(index + 1)...].first { remaining.contains($0) }
+                let before = order[..<index].last { remaining.contains($0) }
+                neighbour = after ?? before
+            }
+        }
+        knownSessionRoutes = newRoutes
+        knownSessionOwners = [:]
+        for page in pages { knownSessionOwners[page.0] = page.1 }
+        if closed { route = neighbour ?? lastPlace }
     }
 
     private var opensAutomatically: Bool {
