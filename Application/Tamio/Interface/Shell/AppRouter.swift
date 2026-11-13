@@ -80,10 +80,10 @@ final class AppRouter: ObservableObject {
     }
 
     private var cancellables = Set<AnyCancellable>()
-    /// The pages the managers had open when the router last looked, and who
-    /// each belonged to. A close reads it to see where the page in view sat.
-    private var knownSessionRoutes: [Route] = []
-    private var knownSessionOwners: [Route: SessionOwner] = [:]
+    /// Every open page, each server's pages together, in the order the
+    /// sidebar lists them. A close reads it to see where the page in view
+    /// sat, so the page after it can take its place.
+    private var knownSessionOrder: [Route] = []
 
     private init() {
         // Whatever closes a session — ⌘W, the sidebar's menu, or the session
@@ -103,8 +103,7 @@ final class AppRouter: ObservableObject {
                 + transfers.map { (.transfer($0.id), .server($0.machine.id)) }
                 + MonitorCenter.shared.sessions.map { (.monitor($0.id), .server($0.machine.id)) }
         }
-        let pages = sessionRoutes.compactMap { route in owner(of: route).map { (route, $0) } }
-        sessionListChanged(to: pages)
+        knownSessionOrder = orderedSessionRoutes()
     }
 
     /// A terminal's page and who it belongs to: its server, or the command
@@ -124,26 +123,38 @@ final class AppRouter: ObservableObject {
             .store(in: &cancellables)
     }
 
+    /// The open pages in the order the sidebar shows them: each server's
+    /// terminals, files and monitor together, the servers in the order their
+    /// first page opened.
+    private func orderedSessionRoutes() -> [Route] {
+        openOwners.flatMap { routes(of: $0) }
+    }
+
+    /// The same order, built from a list that may be newer than the managers:
+    /// their published value arrives before the property itself changes.
+    private static func groupedSessionRoutes(_ pages: [(Route, SessionOwner)]) -> [Route] {
+        var seen = Set<SessionOwner>()
+        var owners: [SessionOwner] = []
+        for page in pages where seen.insert(page.1).inserted {
+            owners.append(page.1)
+        }
+        return owners.flatMap { owner in pages.filter { $0.1 == owner }.map(\.0) }
+    }
+
     /// When the page in view leaves the open pages, the one after it takes
     /// its place — else the one before it, else the last place.
     private func sessionListChanged(to pages: [(Route, SessionOwner)]) {
-        let newRoutes = pages.map(\.0)
-        let oldRoutes = knownSessionRoutes
-        let oldOwners = knownSessionOwners
-        let closed = oldRoutes.contains(route) && !newRoutes.contains(route)
+        let newOrder = Self.groupedSessionRoutes(pages)
+        let oldOrder = knownSessionOrder
+        let closed = oldOrder.contains(route) && !newOrder.contains(route)
         var neighbour: Route?
-        if closed, let owner = oldOwners[route] {
-            let order = oldRoutes.filter { oldOwners[$0] == owner }
-            if let index = order.firstIndex(of: route) {
-                let remaining = order.filter { newRoutes.contains($0) }
-                let after = order[(index + 1)...].first { remaining.contains($0) }
-                let before = order[..<index].last { remaining.contains($0) }
-                neighbour = after ?? before
-            }
+        if closed, let index = oldOrder.firstIndex(of: route) {
+            let remaining = oldOrder.filter { newOrder.contains($0) }
+            let after = oldOrder[(index + 1)...].first { remaining.contains($0) }
+            let before = oldOrder[..<index].last { remaining.contains($0) }
+            neighbour = after ?? before
         }
-        knownSessionRoutes = newRoutes
-        knownSessionOwners = [:]
-        for page in pages { knownSessionOwners[page.0] = page.1 }
+        knownSessionOrder = newOrder
         if closed { route = neighbour ?? lastPlace }
     }
 
@@ -296,14 +307,14 @@ final class AppRouter: ObservableObject {
         return routes(of: owner).contains(route)
     }
 
-    /// Closes the page the window shows now: ⌘W. Another open page of the
-    /// same server takes its place — the one after it, else the neighbour
-    /// before it — and closing the last one leaves the server. Nothing to
-    /// close on the other pages.
+    /// Closes the page the window shows now: ⌘W. Another open page takes its
+    /// place — the one after it, else the one before it — and closing the
+    /// only page leaves for the last place. Nothing to close on the other
+    /// pages.
     @MainActor
     func closeCurrentSession() {
-        guard let owner = owner(of: route), let index = routes(of: owner).firstIndex(of: route) else { return }
-        let order = routes(of: owner)
+        let order = orderedSessionRoutes()
+        guard let index = order.firstIndex(of: route) else { return }
         switch route {
         case let .terminal(id):
             if let context = TerminalManager.shared.sessionContexts.first(where: { $0.id == id }) {
@@ -320,7 +331,7 @@ final class AppRouter: ObservableObject {
         }
         // A pending confirmation keeps the page open, so there is nothing to
         // move to yet.
-        let remaining = routes(of: owner)
+        let remaining = orderedSessionRoutes()
         guard !remaining.contains(order[index]) else { return }
         let before = order[..<index].last { remaining.contains($0) }
         let after = order[(index + 1)...].first { remaining.contains($0) }

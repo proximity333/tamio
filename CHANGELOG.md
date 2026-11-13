@@ -13,6 +13,16 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.34] - 2026-11-13
+
+### Fixed
+- **Closing a session moves through every tab, not only its server's.** The
+  page after the closed one was looked for only among that server's pages, so
+  a server with one terminal still fell back to Home with other sessions
+  open, and ⌘W looked like it had not changed. The whole session list is
+  walked now: the page after the closed one, across servers, else the page
+  before it, and Home only when no session remains.
+
 ## [0.2.33] - 2026-11-13
 
 ### Fixed
