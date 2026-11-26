@@ -86,8 +86,19 @@ nonisolated struct LLMToolSchema: Sendable {
     }
 }
 
+nonisolated struct LLMImageAttachment: Sendable, Equatable {
+    let id: UUID
+    let mediaType: String
+    let data: Data
+    let estimatedTokens: Int
+
+    var base64: String {
+        data.base64EncodedString()
+    }
+}
+
 nonisolated enum LLMConversationTurn: Sendable {
-    case user(String)
+    case user(text: String, images: [LLMImageAttachment] = [])
     case assistant(text: String, toolCalls: [LLMToolCall])
     case toolResult(toolCallId: String, name: String, content: String)
 }
@@ -211,7 +222,7 @@ nonisolated struct RemoteLLMClient: Sendable {
             config: config,
             apiKey: apiKey,
             systemPrompt: systemPrompt,
-            messages: [.user(userPrompt)],
+            messages: [.user(text: userPrompt, images: [])],
             tools: [],
             maxTokens: maxTokens,
             onReasoningDelta: nil,
@@ -246,8 +257,22 @@ nonisolated struct RemoteLLMClient: Sendable {
         ]
         for turn in messages {
             switch turn {
-            case let .user(text):
-                wireMessages.append(["role": "user", "content": text])
+            case let .user(text, images):
+                if images.isEmpty {
+                    wireMessages.append(["role": "user", "content": text])
+                } else {
+                    var parts: [[String: Any]] = []
+                    if !text.isEmpty {
+                        parts.append(["type": "text", "text": text])
+                    }
+                    for image in images {
+                        parts.append([
+                            "type": "image_url",
+                            "image_url": ["url": "data:\(image.mediaType);base64,\(image.base64)"],
+                        ])
+                    }
+                    wireMessages.append(["role": "user", "content": parts])
+                }
             case let .assistant(text, toolCalls):
                 var dict: [String: Any] = ["role": "assistant"]
                 if !text.isEmpty {
@@ -421,9 +446,26 @@ nonisolated struct RemoteLLMClient: Sendable {
 
         for turn in messages {
             switch turn {
-            case let .user(text):
+            case let .user(text, images):
                 flushToolResults()
-                wireMessages.append(["role": "user", "content": text])
+                if images.isEmpty {
+                    wireMessages.append(["role": "user", "content": text])
+                } else {
+                    var blocks: [[String: Any]] = images.map { image in
+                        [
+                            "type": "image",
+                            "source": [
+                                "type": "base64",
+                                "media_type": image.mediaType,
+                                "data": image.base64,
+                            ],
+                        ]
+                    }
+                    if !text.isEmpty {
+                        blocks.append(["type": "text", "text": text])
+                    }
+                    wireMessages.append(["role": "user", "content": blocks])
+                }
             case let .assistant(text, toolCalls):
                 flushToolResults()
                 var blocks: [[String: Any]] = []

@@ -333,6 +333,9 @@ final class ConversationSession {
     private var activeTask: Task<Void, Never>?
     private var onDeviceSessionBox: AnyObject?
     private var onDeviceExchangeCount = 0
+    /// Decoded image data for the messages being sent this turn. Filled when
+    /// images are attached and otherwise read from disk once per session.
+    private var imageCache: [UUID: LLMImageAttachment] = [:]
 
     init(
         conversationID: UUID,
@@ -348,11 +351,24 @@ final class ConversationSession {
 
     // MARK: - Message Mutations
 
-    func send(_ rawText: String) {
+    func send(_ rawText: String, attachments: [AssistantAttachmentDraft] = []) {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isStreaming else { return }
-        appendMessage(AssistantChatMessage(role: .user, text: text))
-        applyImmediateFallbackTitleIfNeeded(from: text)
+        guard !text.isEmpty || !attachments.isEmpty, !isStreaming else { return }
+        for draft in attachments {
+            manager?.saveAttachment(draft, for: conversationID)
+            imageCache[draft.id] = LLMImageAttachment(
+                id: draft.id,
+                mediaType: draft.attachment.mediaType,
+                data: draft.data,
+                estimatedTokens: draft.attachment.estimatedTokens
+            )
+        }
+        appendMessage(AssistantChatMessage(
+            role: .user,
+            text: text,
+            attachments: attachments.map(\.attachment)
+        ))
+        applyImmediateFallbackTitleIfNeeded(from: text.isEmpty ? String(localized: "Image") : text)
         startInference()
     }
 
@@ -398,6 +414,12 @@ final class ConversationSession {
 
     func deleteMessage(_ id: UUID) {
         guard !isStreaming else { return }
+        if let message = messages.first(where: { $0.id == id }) {
+            manager?.deleteAttachments(message.attachments, for: conversationID)
+            for attachment in message.attachments {
+                imageCache[attachment.id] = nil
+            }
+        }
         messages.removeAll { $0.id == id }
         onDeviceSessionBox = nil
         persistMessages()
@@ -466,7 +488,7 @@ final class ConversationSession {
                         config: config,
                         apiKey: apiKey,
                         systemPrompt: systemPrompt,
-                        messages: [.user("Please summarize and compress this server operations conversation so we can continue seamlessly:\n\n\(clipped)")],
+                        messages: [.user(text: "Please summarize and compress this server operations conversation so we can continue seamlessly:\n\n\(clipped)", images: [])],
                         tools: [],
                         onReasoningDelta: { @MainActor [weak self] delta in
                             self?.streamReasoning += delta
@@ -501,6 +523,27 @@ final class ConversationSession {
     private func startInference() {
         guard let manager else { return }
         let selection = manager.effectiveSelection(for: conversationID)
+        let pendingAttachments = messages.last(where: { $0.role == .user })?.attachments ?? []
+        if !pendingAttachments.isEmpty {
+            switch selection {
+            case .appleIntelligence, .applePrivateCloudCompute:
+                appendMessage(AssistantChatMessage(
+                    role: .error,
+                    text: String(localized: "Images are only supported by remote AI providers. Choose one in AI Providers.")
+                ))
+                imageCache.removeAll()
+                return
+            case let .custom(providerId):
+                if let kind = manager.providerStore.provider(id: providerId)?.kind, !kind.supportsImages {
+                    appendMessage(AssistantChatMessage(
+                        role: .error,
+                        text: String(localized: "This AI provider does not support images. Choose a vision model or another provider.")
+                    ))
+                    imageCache.removeAll()
+                    return
+                }
+            }
+        }
         let cid = conversationID
         activeTask?.cancel()
         activeTask = Task { [weak self] in
@@ -551,7 +594,8 @@ final class ConversationSession {
                     messages: messages,
                     baseSystemPrompt: baseSystem,
                     tools: tools,
-                    tokenBudget: budget
+                    tokenBudget: budget,
+                    images: imagesForMessages()
                 )
                 didPruneContext = prepared.didPrune
 
@@ -1014,6 +1058,24 @@ final class ConversationSession {
 
     // MARK: - Helpers
 
+    /// The image payloads for the stored messages, read from disk once per
+    /// session so tool rounds and regeneration do not re-read them.
+    private func imagesForMessages() -> [UUID: LLMImageAttachment] {
+        guard let manager else { return imageCache }
+        for message in messages {
+            for attachment in message.attachments where imageCache[attachment.id] == nil {
+                guard let data = manager.attachmentData(for: attachment, for: conversationID) else { continue }
+                imageCache[attachment.id] = LLMImageAttachment(
+                    id: attachment.id,
+                    mediaType: attachment.mediaType,
+                    data: data,
+                    estimatedTokens: attachment.estimatedTokens
+                )
+            }
+        }
+        return imageCache
+    }
+
     private func appendMessage(_ message: AssistantChatMessage) {
         messages.append(message)
         persistMessages()
@@ -1029,6 +1091,7 @@ final class ConversationSession {
         streamReasoning = ""
         isStreaming = false
         activeTask = nil
+        imageCache.removeAll()
         manager?.markExecuting(conversationID, running: false)
     }
 }
@@ -1183,8 +1246,8 @@ final class ServerAssistant {
         pinnedSkillIDs = set
     }
 
-    func send(_ text: String) {
-        activeSession.send(text)
+    func send(_ text: String, attachments: [AssistantAttachmentDraft] = []) {
+        activeSession.send(text, attachments: attachments)
     }
 
     func stopGenerating() {
@@ -1343,6 +1406,7 @@ final class ServerAssistant {
                 text: msg.text,
                 reasoning: msg.reasoning,
                 toolExecution: msg.toolExecution,
+                attachments: msg.attachments,
                 timestamp: msg.timestamp,
                 modelLabel: msg.modelLabel
             )
@@ -1363,6 +1427,7 @@ final class ServerAssistant {
         conversations.insert(cloned, at: 0)
         conversations = Self.sorted(conversations)
         diskStore.saveMessages(clonedMessages, for: cloned.id)
+        diskStore.copyAttachmentFiles(from: clonedMessages, source: id, destination: cloned.id)
         diskStore.saveIndex(conversations)
         sessions[cloned.id] = ConversationSession(conversationID: cloned.id, messages: clonedMessages, manager: self, remoteClient: remoteClient)
         activeConversationID = cloned.id
@@ -1432,6 +1497,7 @@ final class ServerAssistant {
         bridge.denyPending(for: id)
         conversations.removeAll { $0.id == id }
         diskStore.deleteMessages(for: id)
+        diskStore.deleteAttachmentDirectory(for: id)
 
         if conversations.isEmpty {
             let fresh = AssistantConversation()
@@ -1476,6 +1542,18 @@ final class ServerAssistant {
             conv.messageCount = messages.count
             conv.lastMessagePreview = Self.previewText(from: messages)
         }
+    }
+
+    func saveAttachment(_ draft: AssistantAttachmentDraft, for id: UUID) {
+        diskStore.saveAttachment(draft.attachment, data: draft.data, conversationID: id)
+    }
+
+    func attachmentData(for attachment: AssistantAttachment, for id: UUID) -> Data? {
+        diskStore.attachmentData(for: attachment, conversationID: id)
+    }
+
+    func deleteAttachments(_ attachments: [AssistantAttachment], for id: UUID) {
+        diskStore.deleteAttachmentFiles(attachments, conversationID: id)
     }
 
     func markExecuting(_ id: UUID, running: Bool) {
@@ -1650,6 +1728,9 @@ final class ServerAssistant {
     private static func previewText(from messages: [AssistantChatMessage]) -> String {
         guard let last = messages.last(where: { $0.role == .assistant || $0.role == .user }) else {
             return ""
+        }
+        if last.text.isEmpty, !last.attachments.isEmpty {
+            return String(localized: "Image")
         }
         let cleaned = last.text
             .replacingOccurrences(of: "\n", with: " ")

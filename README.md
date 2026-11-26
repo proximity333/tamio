@@ -60,7 +60,8 @@ Tamio needs macOS 14 or later, and updates itself.
   for approval in the conversation and lands in the server's activity history.
 - **A conversation per task.** Keep several chats, scope each one to all
   servers, a group or a set of hosts, choose its model, and give it built-in
-  or imported ops skills. API keys stay in your Keychain.
+  or imported ops skills. Screenshots can be attached to a message, pasted
+  from the clipboard or picked from disk. API keys stay in your Keychain.
 
 ### Security
 

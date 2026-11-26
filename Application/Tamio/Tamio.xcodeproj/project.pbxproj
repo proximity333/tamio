@@ -32,6 +32,7 @@
 		4D8520C6A941E8188A7D2F17 /* SnippetEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */; };
 		4E0E07201D15B47A69732148 /* Generic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */; };
 		54C706C4966389E84D9903AD /* EULA in Resources */ = {isa = PBXBuildFile; fileRef = 5AE055DD91FA890DB5DDB079 /* EULA */; };
+		5C8190C8AFFF34C149C93D44 /* AssistantImages.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD6221F0BDF9B261ED4D668E /* AssistantImages.swift */; };
 		6847782BF8AA67783B857696 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85358DC98DB406C6FB6D164E /* MainView.swift */; };
 		69FFECCDAACA590F05A1F963 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B043231E7AF65887A269C2 /* SidebarView.swift */; };
 		6AC16DD7B59C49A3DE4CAF35 /* MenubarTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB86E586C8CCFF7474F9F75 /* MenubarTool.swift */; };
@@ -141,6 +142,7 @@
 		BD5F05A6A10CA869F43251F4 /* ServersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServersView.swift; sourceTree = "<group>"; };
 		BFD45B6D35CE50211D749144 /* MacServerAssistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacServerAssistant.swift; sourceTree = "<group>"; };
 		C465A43736C58AD6B51CEC59 /* TerminalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalManager.swift; sourceTree = "<group>"; };
+		CD6221F0BDF9B261ED4D668E /* AssistantImages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantImages.swift; sourceTree = "<group>"; };
 		D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentBridge.swift; sourceTree = "<group>"; };
 		D9EEF0A9C4110C84CABB1CFD /* MachineStatusView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatusView; path = ../../Foundation/MachineStatusView; sourceTree = SOURCE_ROOT; };
 		DEAB5056B28A3AFF05957C93 /* TerminalPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPage.swift; sourceTree = "<group>"; };
@@ -421,6 +423,7 @@
 			isa = PBXGroup;
 			children = (
 				3A54AC1944FCA796E8E9076D /* AssistantConversationStore.swift */,
+				CD6221F0BDF9B261ED4D668E /* AssistantImages.swift */,
 				622D33C900C85BB537163479 /* AssistantProviders.swift */,
 				AA942DD210F94359B1707B00 /* MacAssistantView.swift */,
 				BFD45B6D35CE50211D749144 /* MacServerAssistant.swift */,
@@ -579,6 +582,7 @@
 				A18AECED619F516622FB513E /* AlignedWithContent.swift in Sources */,
 				8766A75FC53E74F9069FC9A2 /* AppRouter.swift in Sources */,
 				0169A95EFF5163A62FB765A2 /* AssistantConversationStore.swift in Sources */,
+				5C8190C8AFFF34C149C93D44 /* AssistantImages.swift in Sources */,
 				C3BF9BFFEF370C5CC3EFA0BA /* AssistantProviders.swift in Sources */,
 				24E5740380D9EAC687D3FC9E /* BatchRunSheet.swift in Sources */,
 				B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */,

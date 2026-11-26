@@ -288,6 +288,16 @@ nonisolated enum AIProviderKind: String, Codable, CaseIterable, Identifiable, Ha
         self != .ollama && self != .magpie
     }
 
+    /// Whether the provider's chat endpoint and the usual models on it take
+    /// images. Custom endpoints are left on and surface their own error, since
+    /// a proxy can front any vision model.
+    var supportsImages: Bool {
+        switch self {
+        case .deepSeek: false
+        default: true
+        }
+    }
+
     var defaultAuthToken: String? {
         switch self {
         case .magpie:

@@ -13,6 +13,17 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Added
+- **The AI assistant can see images.** Attach up to four screenshots or
+  photos to a message, or paste one from the clipboard. Images are scaled,
+  rotated upright and compressed before they are sent, and stay in the
+  conversation's own folder on disk. Remote providers receive them as image
+  blocks; images are not available with on-device Apple Intelligence.
+
+### Changed
+- **The assistant's composer starts two lines tall.** The scope and send row
+  sits closer to the input and shares its centre line.
+
 ## [0.2.38] - 2026-11-26
 
 ### Fixed

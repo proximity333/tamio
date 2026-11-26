@@ -34,6 +34,9 @@ struct MacAssistantView: View {
     @State private var showSkillsSheet = false
     @State private var showHostScopePopover = false
     @State private var historySearch = ""
+    @State private var pendingImages: [AssistantAttachmentDraft] = []
+    @State private var imageError: String?
+    @State private var isPreparingImages = false
 
     // Dialog states
     @State private var renamingConversation: AssistantConversation?
@@ -64,6 +67,17 @@ struct MacAssistantView: View {
 
     private var activeApprovals: [AssistantAgentBridge.PendingApproval] {
         bridge.pendingApprovals(for: activeConversation.id)
+    }
+
+    /// Apple Intelligence is text-only, and DeepSeek's API does not take
+    /// images; everything else is left on and reports its own error.
+    private var canAttachImages: Bool {
+        switch effectiveSelection {
+        case let .custom(providerId):
+            providerStore.provider(id: providerId)?.kind.supportsImages ?? false
+        case .appleIntelligence, .applePrivateCloudCompute:
+            false
+        }
     }
 
     private var hasContent: Bool {
@@ -109,6 +123,8 @@ struct MacAssistantView: View {
         }
         .onChange(of: assistant.activeConversationID) { _, _ in
             inputText = assistant.draftText
+            pendingImages = []
+            imageError = nil
         }
         .onChange(of: inputText) { _, next in
             if assistant.draftText != next {
@@ -649,6 +665,7 @@ struct MacAssistantView: View {
                     ForEach(session.messages) { msg in
                         MacChatMessageRow(
                             message: msg,
+                            conversationID: activeConversation.id,
                             canMutate: !session.isStreaming,
                             isLastAssistant: msg.id == lastAssistantID,
                             onRetry: { session.retryAfterError() },
@@ -771,19 +788,65 @@ struct MacAssistantView: View {
     private var flowDownComposer: some View {
         let session = activeSession
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let canSend = !session.isStreaming && !trimmed.isEmpty
+        let canSend = !session.isStreaming && !isPreparingImages && (!trimmed.isEmpty || !pendingImages.isEmpty)
+        let room = AssistantImageProcessor.maxImagesPerMessage - pendingImages.count
 
         return VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
+                if !pendingImages.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(pendingImages) { draft in
+                                MacPendingImageChip(draft: draft) {
+                                    pendingImages.removeAll { $0.id == draft.id }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
+                }
+
                 TextField("Ask to check metrics, run batch commands, or manage servers…", text: $inputText, axis: .vertical)
                     .textFieldStyle(.plain)
                     .font(.body)
-                    .lineLimit(1 ... 6)
+                    .lineLimit(2 ... 6)
+                    .frame(minHeight: 40, alignment: .topLeading)
                     .onSubmit { sendCurrentInput() }
                     .padding(.horizontal, 14)
-                    .padding(.top, 11)
+                    .padding(.top, pendingImages.isEmpty ? 10 : 2)
 
-                HStack(spacing: 8) {
+                if let imageError {
+                    Text(imageError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .padding(.horizontal, 14)
+                }
+
+                HStack(alignment: .center, spacing: 8) {
+                    Menu {
+                        Button("Choose Image…") { chooseImages() }
+                        Button("Paste Image") { pasteImage() }
+                    } label: {
+                        Image(systemName: "paperclip")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(canAttachImages ? Color.secondary : Color.secondary.opacity(0.4))
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .disabled(!canAttachImages || isPreparingImages || room <= 0)
+                    .help(canAttachImages ? Text("Attach Image") : Text("Images need a remote AI provider."))
+
+                    if isPreparingImages {
+                        ProgressView().controlSize(.mini)
+                    }
+
+                    if !pendingImages.isEmpty {
+                        Text("\(pendingImages.count)/\(AssistantImageProcessor.maxImagesPerMessage)")
+                            .font(.caption2)
+                            .foregroundStyle(.rxInkSecondary)
+                    }
+
                     Text(String(localized: "\(assistant.resolvedScopedMachines(for: activeConversation.id).count) servers in scope"))
                         .font(.caption)
                         .foregroundStyle(.rxInkSecondary)
@@ -821,22 +884,88 @@ struct MacAssistantView: View {
                     .buttonStyle(.plain)
                     .disabled(!session.isStreaming && !canSend)
                 }
+                .frame(height: 30)
                 .padding(.horizontal, 12)
-                .padding(.bottom, 10)
+                .padding(.bottom, 6)
             }
             .rxCard()
             .frame(maxWidth: 820)
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
     }
 
     private func sendCurrentInput() {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !activeSession.isStreaming else { return }
+        guard !trimmed.isEmpty || !pendingImages.isEmpty, !activeSession.isStreaming, !isPreparingImages else { return }
+        let images = pendingImages
         inputText = ""
         assistant.draftText = ""
-        activeSession.send(trimmed)
+        pendingImages = []
+        imageError = nil
+        activeSession.send(trimmed, attachments: images)
+    }
+
+    private func chooseImages() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.image]
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK else { return }
+        importImages(from: panel.urls)
+    }
+
+    private func importImages(from urls: [URL]) {
+        let room = AssistantImageProcessor.maxImagesPerMessage - pendingImages.count
+        guard room > 0 else {
+            imageError = String(localized: "At most \(AssistantImageProcessor.maxImagesPerMessage) images per message.")
+            return
+        }
+        let selected = Array(urls.prefix(room))
+        let overflow = urls.count > room
+        isPreparingImages = true
+        imageError = nil
+
+        Task {
+            var drafts: [AssistantAttachmentDraft] = []
+            var failure: String?
+            for url in selected {
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer {
+                    if accessed {
+                        url.stopAccessingSecurityScopedResource()
+                    }
+                }
+                do {
+                    let draft = try await Task.detached(priority: .userInitiated) {
+                        try AssistantImageProcessor.prepare(contentsOf: url)
+                    }.value
+                    drafts.append(draft)
+                } catch {
+                    failure = error.localizedDescription
+                }
+            }
+            pendingImages.append(contentsOf: drafts)
+            isPreparingImages = false
+            if let failure {
+                imageError = failure
+            } else if overflow {
+                imageError = String(localized: "At most \(AssistantImageProcessor.maxImagesPerMessage) images per message.")
+            }
+        }
+    }
+
+    private func pasteImage() {
+        guard let draft = AssistantImageProcessor.fromPasteboard() else {
+            imageError = String(localized: "The clipboard has no image.")
+            return
+        }
+        guard pendingImages.count < AssistantImageProcessor.maxImagesPerMessage else {
+            imageError = String(localized: "At most \(AssistantImageProcessor.maxImagesPerMessage) images per message.")
+            return
+        }
+        pendingImages.append(draft)
+        imageError = nil
     }
 }
 
@@ -920,6 +1049,7 @@ private struct MacHostScopePopover: View {
 
 private struct MacChatMessageRow: View {
     let message: AssistantChatMessage
+    let conversationID: UUID
     let canMutate: Bool
     let isLastAssistant: Bool
     let onRetry: () -> Void
@@ -935,15 +1065,28 @@ private struct MacChatMessageRow: View {
         case .user:
             HStack {
                 Spacer(minLength: 60)
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(message.text)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 9)
-                        .background(Color.accentColor.opacity(0.16), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .textSelection(.enabled)
+                VStack(alignment: .trailing, spacing: 6) {
+                    if !message.attachments.isEmpty {
+                        HStack(spacing: 6) {
+                            ForEach(message.attachments) { attachment in
+                                MacMessageImageThumbnail(attachment: attachment, conversationID: conversationID)
+                            }
+                        }
                         .contextMenu {
                             userContextMenu
                         }
+                    }
+
+                    if !message.text.isEmpty {
+                        Text(message.text)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .background(Color.accentColor.opacity(0.16), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .textSelection(.enabled)
+                            .contextMenu {
+                                userContextMenu
+                            }
+                    }
 
                     if isHovered, canMutate {
                         HStack(spacing: 6) {
@@ -1697,6 +1840,91 @@ private struct MacOpsSkillsSheet: View {
                 importStatus = error.localizedDescription
             }
             isImportingURL = false
+        }
+    }
+}
+
+// MARK: - Image Views
+
+private struct MacPendingImageChip: View {
+    let draft: AssistantAttachmentDraft
+    let onRemove: () -> Void
+
+    @State private var image: NSImage?
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Color.primary.opacity(0.06)
+                }
+            }
+            .frame(width: 64, height: 64)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white, Color.black.opacity(0.55))
+            }
+            .buttonStyle(.plain)
+            .offset(x: 5, y: -5)
+            .help("Remove Image")
+        }
+        .help(Text(draft.attachment.fileName))
+        .task(id: draft.id) {
+            image = NSImage(data: draft.data)
+        }
+    }
+}
+
+private struct MacMessageImageThumbnail: View {
+    let attachment: AssistantAttachment
+    let conversationID: UUID
+
+    @State private var image: NSImage?
+
+    private var url: URL {
+        AssistantConversationDiskStore.shared.attachmentURL(for: attachment, conversationID: conversationID)
+    }
+
+    var body: some View {
+        Button {
+            NSWorkspace.shared.open(url)
+        } label: {
+            ZStack {
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Color.primary.opacity(0.06)
+                    ProgressView().controlSize(.small)
+                }
+            }
+            .frame(width: 108, height: 108)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .help(Text(attachment.fileName))
+        .task(id: attachment.id) {
+            guard image == nil else { return }
+            let attachment = attachment
+            let conversationID = conversationID
+            let data = await Task.detached(priority: .userInitiated) {
+                let url = AssistantConversationDiskStore.shared.attachmentURL(
+                    for: attachment,
+                    conversationID: conversationID
+                )
+                return try? Data(contentsOf: url)
+            }.value
+            if let data {
+                image = NSImage(data: data)
+            }
         }
     }
 }

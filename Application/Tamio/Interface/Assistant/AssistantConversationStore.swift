@@ -56,6 +56,61 @@ nonisolated struct AssistantToolExecution: Codable, Equatable, Hashable, Sendabl
     }
 }
 
+// MARK: - Image Attachments
+
+/// One image on a message. The pixels live in the conversation's attachment
+/// folder, not in the conversation JSON: a screenshot is megabytes of base64
+/// that would be rewritten on every keystroke's save otherwise.
+nonisolated struct AssistantAttachment: Identifiable, Codable, Equatable, Hashable, Sendable {
+    let id: UUID
+    var fileName: String
+    var mediaType: String
+    var byteCount: Int
+    var width: Int
+    var height: Int
+    var createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        fileName: String,
+        mediaType: String,
+        byteCount: Int,
+        width: Int,
+        height: Int,
+        createdAt: Date = Date()
+    ) {
+        self.id = id
+        self.fileName = fileName
+        self.mediaType = mediaType
+        self.byteCount = byteCount
+        self.width = width
+        self.height = height
+        self.createdAt = createdAt
+    }
+
+    var fileExtension: String {
+        mediaType == "image/png" ? "png" : "jpg"
+    }
+
+    /// Rough image cost in the context budget: Anthropic bills pixels, and
+    /// OpenAI a base charge plus tiles. Capped so one huge screenshot cannot
+    /// evict a whole conversation on its own.
+    var estimatedTokens: Int {
+        let pixels = max(1, width * height)
+        return min(2000, max(85, pixels / 750))
+    }
+}
+
+/// An image being prepared for a message but not yet written to disk.
+nonisolated struct AssistantAttachmentDraft: Identifiable, Sendable {
+    let attachment: AssistantAttachment
+    let data: Data
+
+    var id: UUID {
+        attachment.id
+    }
+}
+
 // MARK: - Persistent Chat Message (Single Source of Truth)
 
 nonisolated struct AssistantChatMessage: Identifiable, Codable, Equatable, Hashable, Sendable {
@@ -72,6 +127,7 @@ nonisolated struct AssistantChatMessage: Identifiable, Codable, Equatable, Hasha
     var text: String
     var reasoning: String
     var toolExecution: AssistantToolExecution?
+    var attachments: [AssistantAttachment]
     var timestamp: Date
     var modelLabel: String?
 
@@ -81,6 +137,7 @@ nonisolated struct AssistantChatMessage: Identifiable, Codable, Equatable, Hasha
         text: String,
         reasoning: String = "",
         toolExecution: AssistantToolExecution? = nil,
+        attachments: [AssistantAttachment] = [],
         timestamp: Date = Date(),
         modelLabel: String? = nil
     ) {
@@ -89,8 +146,40 @@ nonisolated struct AssistantChatMessage: Identifiable, Codable, Equatable, Hasha
         self.text = text
         self.reasoning = reasoning
         self.toolExecution = toolExecution
+        self.attachments = attachments
         self.timestamp = timestamp
         self.modelLabel = modelLabel
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, role, text, reasoning, toolExecution, attachments, timestamp, modelLabel
+    }
+
+    /// Conversations saved before images existed have no `attachments` key.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        role = try container.decode(Role.self, forKey: .role)
+        text = try container.decode(String.self, forKey: .text)
+        reasoning = try container.decode(String.self, forKey: .reasoning)
+        toolExecution = try container.decodeIfPresent(AssistantToolExecution.self, forKey: .toolExecution)
+        attachments = try container.decodeIfPresent([AssistantAttachment].self, forKey: .attachments) ?? []
+        timestamp = try container.decode(Date.self, forKey: .timestamp)
+        modelLabel = try container.decodeIfPresent(String.self, forKey: .modelLabel)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(role, forKey: .role)
+        try container.encode(text, forKey: .text)
+        try container.encode(reasoning, forKey: .reasoning)
+        try container.encodeIfPresent(toolExecution, forKey: .toolExecution)
+        if !attachments.isEmpty {
+            try container.encode(attachments, forKey: .attachments)
+        }
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encodeIfPresent(modelLabel, forKey: .modelLabel)
     }
 }
 
@@ -160,6 +249,7 @@ final nonisolated class AssistantConversationDiskStore: Sendable {
 
     private let baseDirectory: URL
     private let conversationsDirectory: URL
+    private let attachmentsDirectory: URL
     private let indexURL: URL
     private let ioQueue = DispatchQueue(label: "sb.moe.tamio.assistant.disk", qos: .utility)
 
@@ -172,12 +262,60 @@ final nonisolated class AssistantConversationDiskStore: Sendable {
             .appendingPathComponent("TamioAssistant", isDirectory: true)
         baseDirectory = base
         conversationsDirectory = base.appendingPathComponent("conversations", isDirectory: true)
+        attachmentsDirectory = base.appendingPathComponent("attachments", isDirectory: true)
         indexURL = base.appendingPathComponent("index.json")
         try? FileManager.default.createDirectory(at: conversationsDirectory, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: attachmentsDirectory, withIntermediateDirectories: true)
     }
 
     private func messagesURL(for id: UUID) -> URL {
         conversationsDirectory.appendingPathComponent("\(id.uuidString).json")
+    }
+
+    private func attachmentDirectory(for conversationID: UUID) -> URL {
+        attachmentsDirectory.appendingPathComponent(conversationID.uuidString, isDirectory: true)
+    }
+
+    /// Where a message's image lives, for the thumbnail and the provider.
+    func attachmentURL(for attachment: AssistantAttachment, conversationID: UUID) -> URL {
+        attachmentDirectory(for: conversationID)
+            .appendingPathComponent("\(attachment.id.uuidString).\(attachment.fileExtension)")
+    }
+
+    func saveAttachment(_ attachment: AssistantAttachment, data: Data, conversationID: UUID) {
+        let directory = attachmentDirectory(for: conversationID)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? data.write(to: attachmentURL(for: attachment, conversationID: conversationID), options: .atomic)
+    }
+
+    func attachmentData(for attachment: AssistantAttachment, conversationID: UUID) -> Data? {
+        try? Data(contentsOf: attachmentURL(for: attachment, conversationID: conversationID))
+    }
+
+    func deleteAttachmentFiles(_ attachments: [AssistantAttachment], conversationID: UUID) {
+        for attachment in attachments {
+            try? FileManager.default.removeItem(at: attachmentURL(for: attachment, conversationID: conversationID))
+        }
+    }
+
+    func deleteAttachmentDirectory(for conversationID: UUID) {
+        try? FileManager.default.removeItem(at: attachmentDirectory(for: conversationID))
+    }
+
+    /// Copies the images of the messages into a new conversation's folder.
+    /// Each conversation owns its images, so deleting either is independent.
+    func copyAttachmentFiles(from messages: [AssistantChatMessage], source: UUID, destination: UUID) {
+        let destinationDirectory = attachmentDirectory(for: destination)
+        try? FileManager.default.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+        for message in messages {
+            for attachment in message.attachments {
+                let sourceURL = attachmentURL(for: attachment, conversationID: source)
+                let destinationURL = attachmentURL(for: attachment, conversationID: destination)
+                if FileManager.default.fileExists(atPath: sourceURL.path) {
+                    try? FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+                }
+            }
+        }
     }
 
     func loadIndex() -> [AssistantConversation] {
@@ -228,10 +366,12 @@ final nonisolated class AssistantConversationDiskStore: Sendable {
     }
 
     func eraseAll() {
-        ioQueue.async { [indexURL, conversationsDirectory] in
+        ioQueue.async { [indexURL, conversationsDirectory, attachmentsDirectory] in
             try? FileManager.default.removeItem(at: indexURL)
             try? FileManager.default.removeItem(at: conversationsDirectory)
+            try? FileManager.default.removeItem(at: attachmentsDirectory)
             try? FileManager.default.createDirectory(at: conversationsDirectory, withIntermediateDirectories: true)
+            try? FileManager.default.createDirectory(at: attachmentsDirectory, withIntermediateDirectories: true)
         }
     }
 
@@ -292,7 +432,8 @@ nonisolated enum ConversationContextBuilder {
         messages: [AssistantChatMessage],
         baseSystemPrompt: String,
         tools: [LLMToolSchema],
-        tokenBudget: Int
+        tokenBudget: Int,
+        images: [UUID: LLMImageAttachment] = [:]
     ) -> PreparedContext {
         let recentCutoff = max(0, messages.count - 8)
         var turns: [LLMConversationTurn] = []
@@ -301,8 +442,9 @@ nonisolated enum ConversationContextBuilder {
             switch msg.role {
             case .user:
                 let text = msg.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !text.isEmpty else { continue }
-                turns.append(.user(text))
+                let attached = msg.attachments.compactMap { images[$0.id] }
+                guard !text.isEmpty || !attached.isEmpty else { continue }
+                turns.append(.user(text: text, images: attached))
 
             case .assistant:
                 let text = msg.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -394,8 +536,9 @@ nonisolated enum ConversationContextBuilder {
         for turn in evicted {
             let line: String
             switch turn {
-            case let .user(text):
-                line = "user: \(firstLine(text, limit: 140))"
+            case let .user(text, images):
+                let imageNote = images.isEmpty ? "" : " [\(images.count) image\(images.count == 1 ? "" : "s")]"
+                line = "user: \(text.isEmpty ? "" : firstLine(text, limit: 140))\(imageNote)"
             case let .assistant(text, calls):
                 if !text.isEmpty {
                     line = "assistant: \(firstLine(text, limit: 160))"
@@ -441,7 +584,8 @@ nonisolated enum ConversationContextBuilder {
         var used = 0
         for msg in relevant.reversed() {
             let prefix = msg.role == .user ? "User: " : "Assistant: "
-            let clipped = msg.text.count > 360 ? String(msg.text.prefix(360)) + "…" : msg.text
+            let body = msg.text.isEmpty && !msg.attachments.isEmpty ? "[image]" : msg.text
+            let clipped = body.count > 360 ? String(body.prefix(360)) + "…" : body
             let entry = prefix + clipped.replacingOccurrences(of: "\n", with: " ")
             if used + entry.count > maxChars {
                 break
@@ -470,8 +614,9 @@ nonisolated enum ConversationContextBuilder {
 
     private static func estimateTurnTokens(_ turn: LLMConversationTurn) -> Int {
         switch turn {
-        case let .user(text):
-            return 6 + estimateTokens(text)
+        case let .user(text, images):
+            let imagesCost = images.reduce(0) { $0 + $1.estimatedTokens }
+            return 6 + estimateTokens(text) + imagesCost
         case let .assistant(text, calls):
             let callsCost = calls.reduce(0) { $0 + 12 + estimateTokens($1.name) + estimateTokens($1.argumentsJSON) }
             return 6 + estimateTokens(text) + callsCost
@@ -506,7 +651,15 @@ nonisolated enum ConversationContextBuilder {
         for msg in messages {
             switch msg.role {
             case .user:
-                out.append("## User\n\n\(msg.text)\n")
+                var lines = ["## User", ""]
+                if !msg.text.isEmpty {
+                    lines.append(msg.text)
+                    lines.append("")
+                }
+                for attachment in msg.attachments {
+                    lines.append("> **Image**: \(attachment.fileName) (\(attachment.width)×\(attachment.height))")
+                }
+                out.append(lines.joined(separator: "\n") + "\n")
             case .assistant:
                 if !msg.reasoning.isEmpty {
                     out.append("<details><summary>Thinking</summary>\n\n\(msg.reasoning)\n\n</details>\n")
