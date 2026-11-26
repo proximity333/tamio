@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.39] - 2026-11-26
+
 ### Added
 - **The AI assistant can see images.** Attach up to four screenshots or
   photos to a message, or paste one from the clipboard. Images are scaled,
