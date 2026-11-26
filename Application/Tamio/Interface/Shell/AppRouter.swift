@@ -13,6 +13,7 @@ import SwiftUI
 
 enum Route: Hashable {
     case home
+    case assistant
     case servers
     case identities
     case snippets

@@ -60,7 +60,13 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
 
     // MARK: - AgentEnvironment
 
+    /// Optional hook for the in-app AI Assistant's inline approval cards.
+    var inlineApprovalHandler: ((AgentRequest) async -> Bool?)?
+
     func approve(_ request: AgentRequest) async -> Bool {
+        if let handler = inlineApprovalHandler, let decision = await handler(request) {
+            return decision
+        }
         Mac.activate()
         let serversPrefix = String(localized: "Servers: ")
         let moreServers = request.hosts.count > 12 ? " " + String(localized: "and \(request.hosts.count - 12) more") : ""

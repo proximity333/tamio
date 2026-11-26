@@ -17,7 +17,7 @@ is being brought up to the Mac app's features; it is not shipped yet.
 
 | Path | What is there |
 |---|---|
-| `Application/Tamio` | The Mac app. `Interface/` holds the pages (Home, Servers, Files, Settings…), `Mac/` the AppKit side (windows and their material, alerts and panels, the menu bar item, Sparkle), `project.yml` the XcodeGen spec |
+| `Application/Tamio` | The Mac app. `Interface/` holds the pages (Home, Assistant, Servers, Files, Settings…), `Mac/` the AppKit side (windows and their material, alerts and panels, the menu bar item, Sparkle), `project.yml` the XcodeGen spec |
 | `Application/TamioMobile` | The iOS and iPadOS app: a tab bar on iPhone, the sidebar on iPad. `project.yml` is its XcodeGen spec; `TamioMobile.xcworkspace` at the root holds it with the packages. Its `Resources/Localizable.xcstrings` is its own copy of the Mac catalog plus the iOS-only strings |
 | `Foundation/TamioModule` | The app's core: store, sync, SFTP browsing and transfers, the MCP server (`Agent/`) |
 | `Foundation/TamioDesign` | Design tokens and shared controls (colours, rows, `RXRowLayout`) |

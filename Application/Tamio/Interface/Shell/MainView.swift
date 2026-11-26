@@ -149,6 +149,8 @@ struct MainView: View {
         switch router.route {
         case .home:
             HomeView()
+        case .assistant:
+            MacAssistantView()
         case .servers:
             ServersView()
         case .identities:

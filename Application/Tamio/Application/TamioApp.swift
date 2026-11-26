@@ -133,6 +133,11 @@ struct TamioCommands: Commands {
                 AppRouter.shared.route = .portForward
             }
             .keyboardShortcut("5", modifiers: .command)
+            Button("Assistant") {
+                MainWindow.show()
+                AppRouter.shared.route = .assistant
+            }
+            .keyboardShortcut("6", modifiers: .command)
             Divider()
         }
         CommandGroup(before: .windowList) {

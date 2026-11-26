@@ -172,6 +172,18 @@ public final class AgentServer {
 
     // MARK: - Tools
 
+    /// Tool schemas exposed by the MCP server, shared with in-app AI assistants.
+    public static var toolDefinitions: [JSONValue] { AgentTools.definitions }
+
+    /// Runs one MCP tool directly inside the app, enforcing the same approval,
+    /// activity logging, and secret-redaction guarantees as external MCP clients.
+    public func invokeTool(_ name: String, arguments: JSONValue, client: String) async -> (text: String, isError: Bool) {
+        let reply = await callTool(name, arguments: arguments, client: client)
+        let text = reply["content"]?.array?.first?["text"]?.string ?? reply.encodedString(pretty: true)
+        let isError = reply["isError"]?.bool ?? false
+        return (text, isError)
+    }
+
     /// A tool's reply: its JSON as text, or an error the agent reads.
     func callTool(_ name: String, arguments: JSONValue, client: String) async -> JSONValue {
         pendingActivity = nil

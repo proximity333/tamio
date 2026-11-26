@@ -49,6 +49,19 @@ Tamio needs macOS 14 or later, and updates itself.
   server, and syncs across your Macs, so the next agent knows what the last one
   did there.
 
+### Assistant
+
+- **A built-in AI assistant that works on your servers.** Assistant, in the
+  sidebar, talks to Apple Intelligence on device (macOS 26 or later) or to
+  OpenAI, Anthropic, Gemini, DeepSeek, Ollama and any compatible endpoint.
+- **It uses Tamio's own tools.** The assistant reads live metrics, runs
+  commands on one server or many, and changes servers, SSH keys, snippets and
+  port forwards through the same MCP engine agents use — so every action asks
+  for approval in the conversation and lands in the server's activity history.
+- **A conversation per task.** Keep several chats, scope each one to all
+  servers, a group or a set of hosts, choose its model, and give it built-in
+  or imported ops skills. API keys stay in your Keychain.
+
 ### Security
 
 - **Agents never see a secret.** No tool returns a password, a private key or a

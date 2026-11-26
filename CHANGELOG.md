@@ -13,6 +13,11 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.36] - 2026-11-26
+
+### Added
+- **AI 助手，直接在 Tamio 里管理服务器。** Assistant 是侧边栏里的新页面：可以和 OpenAI、Anthropic、Gemini、DeepSeek、Ollama 或任意兼容端点对话，macOS 26 起也可以使用端侧的 Apple Intelligence；助手通过 Tamio 自己的 MCP 工具读取实时指标、跨服务器运行命令、管理服务器和代码片段，改动前会在对话里显示审批卡片，操作照常写入每台服务器的智能体历史。支持多会话、按服务器/分组/自选主机限定范围、每个会话单独选择模型、运维技能（内置与 SKILL.md 文件/URL 导入）、思考过程、重新生成、编辑并重发、从任意消息分叉、压缩为新会话、导出 Markdown，以及跨会话记忆和上下文裁剪。API Key 只存储在钥匙串中。
+
 ## [0.2.35] - 2026-11-13
 
 ### Changed

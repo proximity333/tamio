@@ -17,10 +17,11 @@ packages:
   MachineStatus: { path: ../../Foundation/MachineStatus }
   MachineStatusView: { path: ../../Foundation/MachineStatusView }
   SymbolPicker: { path: ../../Foundation/SymbolPicker }
+  Keychain: { path: ../../Foundation/Keychain }
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.2.35"
+    MARKETING_VERSION: "0.2.36"
     # The build number is the version: Sparkle orders updates by it.
     CURRENT_PROJECT_VERSION: $(MARKETING_VERSION)
     DEVELOPMENT_TEAM: NCFNX3LJ83
@@ -83,6 +84,7 @@ targets:
       - package: MachineStatus
       - package: MachineStatusView
       - package: SymbolPicker
+      - package: Keychain
       - framework: ../../External/Sparkle/Sparkle.framework
         embed: true
         codeSign: true
