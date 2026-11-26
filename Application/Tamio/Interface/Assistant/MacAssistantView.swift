@@ -729,9 +729,7 @@ struct MacAssistantView: View {
                     }
                 }
             } else {
-                Text(session.streamText)
-                    .textSelection(.enabled)
-                    .lineSpacing(3)
+                AssistantMarkdownView(text: session.streamText)
             }
         }
         .padding(14)
@@ -965,9 +963,7 @@ private struct MacChatMessageRow: View {
                 if !message.reasoning.isEmpty {
                     MacReasoningBox(text: message.reasoning, defaultExpanded: false, isThinking: false)
                 }
-                Text(message.text)
-                    .textSelection(.enabled)
-                    .lineSpacing(3)
+                AssistantMarkdownView(text: message.text)
 
                 HStack(spacing: 8) {
                     if let label = message.modelLabel {
@@ -1416,8 +1412,8 @@ private struct MacAIProviderSettingsSheet: View {
                             Text("Context Token Budget").font(.subheadline)
                             Spacer()
                             Picker("", selection: $assistant.contextTokenBudget) {
-                                Text("32K").tag(32_000)
-                                Text("64K").tag(64_000)
+                                Text("32K").tag(32000)
+                                Text("64K").tag(64000)
                                 Text("128K").tag(128_000)
                                 Text("200K").tag(200_000)
                                 Text("256K").tag(256_000)
@@ -1702,5 +1698,237 @@ private struct MacOpsSkillsSheet: View {
             }
             isImportingURL = false
         }
+    }
+}
+
+// MARK: - Markdown Renderer
+
+/// Draws the assistant's Markdown with native SwiftUI: headings, paragraphs,
+/// lists, quotes, fenced code and pipe tables, with inline bold, italic, code
+/// and links. The assistant is told to answer in Markdown, so a plain `Text`
+/// showed the markers instead of the formatting.
+private struct AssistantMarkdownView: View {
+    let text: String
+
+    private enum Block: Identifiable {
+        case text(Int, String)
+        case code(Int, language: String, content: String)
+        case table(Int, headers: [String], rows: [[String]])
+
+        var id: Int {
+            switch self {
+            case let .text(index, _), let .code(index, _, _), let .table(index, _, _): index
+            }
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(parseBlocks(text)) { block in
+                switch block {
+                case let .text(_, content):
+                    textBlock(content)
+                case let .code(_, language, code):
+                    codeBlock(language: language, code: code)
+                case let .table(_, headers, rows):
+                    table(headers: headers, rows: rows)
+                }
+            }
+        }
+        .textSelection(.enabled)
+    }
+
+    // MARK: Text
+
+    private func textBlock(_ raw: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(Array(raw.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if trimmed.isEmpty {
+                    Color.clear.frame(height: 4)
+                } else if trimmed == "---" || trimmed == "***" || trimmed == "___" {
+                    Divider()
+                } else if trimmed.hasPrefix("### ") {
+                    markdownSpan(String(trimmed.dropFirst(4)))
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.top, 2)
+                } else if trimmed.hasPrefix("## ") {
+                    markdownSpan(String(trimmed.dropFirst(3)))
+                        .font(.headline)
+                        .padding(.top, 3)
+                } else if trimmed.hasPrefix("# ") {
+                    markdownSpan(String(trimmed.dropFirst(2)))
+                        .font(.headline.weight(.bold))
+                        .padding(.top, 4)
+                } else if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") || trimmed.hasPrefix("+ ") {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("•").foregroundStyle(.secondary)
+                        markdownSpan(String(trimmed.dropFirst(2)))
+                    }
+                } else if let ordered = orderedItem(trimmed) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(ordered.number + ".").foregroundStyle(.secondary)
+                        markdownSpan(ordered.content)
+                    }
+                } else if trimmed.hasPrefix("> ") {
+                    HStack(alignment: .top, spacing: 8) {
+                        Capsule()
+                            .fill(Color.accentColor.opacity(0.35))
+                            .frame(width: 2)
+                        markdownSpan(String(trimmed.dropFirst(2)))
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    markdownSpan(trimmed)
+                }
+            }
+        }
+    }
+
+    private func orderedItem(_ line: String) -> (number: String, content: String)? {
+        let parts = line.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: false)
+        guard parts.count == 2, parts[0].hasSuffix("."),
+              parts[0].dropLast().allSatisfy(\.isNumber)
+        else { return nil }
+        return (String(parts[0].dropLast()), String(parts[1]))
+    }
+
+    private func markdownSpan(_ content: String) -> Text {
+        if let attributed = try? AttributedString(
+            markdown: content,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            return Text(attributed)
+        }
+        return Text(content)
+    }
+
+    // MARK: Code & Tables
+
+    private func codeBlock(language: String, code: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(language.isEmpty ? "shell" : language)
+                    .font(.caption2.monospaced().weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(code, forType: .string)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Copy")
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                Text(code)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+        }
+        .padding(10)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func table(headers: [String], rows: [[String]]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 6) {
+                GridRow {
+                    ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
+                        markdownSpan(header)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Divider().gridCellUnsizedAxes(.horizontal)
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    GridRow {
+                        ForEach(0 ..< headers.count, id: \.self) { column in
+                            markdownSpan(column < row.count ? row[column] : "")
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+            .padding(10)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        }
+    }
+
+    // MARK: Parsing
+
+    private func parseBlocks(_ input: String) -> [Block] {
+        var blocks: [Block] = []
+        var textLines: [String] = []
+        let lines = input.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n")
+        var index = 0
+
+        func flushText() {
+            let joined = textLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !joined.isEmpty {
+                blocks.append(.text(blocks.count, joined))
+            }
+            textLines.removeAll()
+        }
+
+        while index < lines.count {
+            let trimmed = lines[index].trimmingCharacters(in: .whitespaces)
+
+            if trimmed.hasPrefix("```") {
+                flushText()
+                let language = String(trimmed.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                var codeLines: [String] = []
+                index += 1
+                while index < lines.count, !lines[index].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+                    codeLines.append(lines[index])
+                    index += 1
+                }
+                blocks.append(.code(blocks.count, language: language, content: codeLines.joined(separator: "\n")))
+                index += 1
+                continue
+            }
+
+            if trimmed.contains("|"), index + 1 < lines.count {
+                let next = lines[index + 1].trimmingCharacters(in: .whitespaces)
+                if next.contains("|"), next.contains("-") {
+                    let headers = splitTableRow(trimmed)
+                    if !headers.isEmpty {
+                        flushText()
+                        var rows: [[String]] = []
+                        index += 2
+                        while index < lines.count {
+                            let row = lines[index].trimmingCharacters(in: .whitespaces)
+                            guard row.contains("|") else { break }
+                            rows.append(splitTableRow(row))
+                            index += 1
+                        }
+                        blocks.append(.table(blocks.count, headers: headers, rows: rows))
+                        continue
+                    }
+                }
+            }
+
+            textLines.append(lines[index])
+            index += 1
+        }
+        flushText()
+        return blocks
+    }
+
+    private func splitTableRow(_ line: String) -> [String] {
+        var trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("|") {
+            trimmed.removeFirst()
+        }
+        if trimmed.hasSuffix("|") {
+            trimmed.removeLast()
+        }
+        return trimmed.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
     }
 }

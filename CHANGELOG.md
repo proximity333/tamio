@@ -13,6 +13,13 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.38] - 2026-11-26
+
+### Fixed
+- **Assistant replies render their Markdown.** Headings, bold and italic text,
+  lists, quotes, fenced code and tables are drawn as such, instead of showing
+  their `#`, `**` and `|` markers as plain text.
+
 ## [0.2.37] - 2026-11-26
 
 ### Changed
