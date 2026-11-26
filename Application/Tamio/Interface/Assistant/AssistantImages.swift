@@ -82,6 +82,19 @@ nonisolated enum AssistantImageProcessor {
         return AssistantAttachmentDraft(attachment: attachment, data: jpeg)
     }
 
+    /// Whether the clipboard has an image or an image file, without decoding it.
+    static var pasteboardHasImage: Bool {
+        let pasteboard = NSPasteboard.general
+        if pasteboard.availableType(from: [.png, .tiff]) != nil {
+            return true
+        }
+        let options: [NSPasteboard.ReadingOptionKey: Any] = [.urlReadingFileURLsOnly: true]
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: options) as? [URL] {
+            return urls.contains { UTType(filenameExtension: $0.pathExtension)?.conforms(to: .image) == true }
+        }
+        return false
+    }
+
     /// The image on the pasteboard, as a file copied there or raw pixels.
     static func fromPasteboard() -> AssistantAttachmentDraft? {
         let pasteboard = NSPasteboard.general

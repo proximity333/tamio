@@ -13,6 +13,12 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.40] - 2026-11-26
+
+### Fixed
+- **⌘V pastes a screenshot into the assistant's composer.** Before, only the
+  attach menu's Paste Image worked. Text pastes as before.
+
 ## [0.2.39] - 2026-11-26
 
 ### Added

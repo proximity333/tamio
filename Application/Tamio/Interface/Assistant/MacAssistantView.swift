@@ -37,6 +37,8 @@ struct MacAssistantView: View {
     @State private var pendingImages: [AssistantAttachmentDraft] = []
     @State private var imageError: String?
     @State private var isPreparingImages = false
+    @State private var pasteMonitor: Any?
+    @FocusState private var composerFocused: Bool
 
     // Dialog states
     @State private var renamingConversation: AssistantConversation?
@@ -116,8 +118,13 @@ struct MacAssistantView: View {
             bridge.install()
             bridge.inlineApprovalActive = true
             inputText = assistant.draftText
+            installPasteMonitor()
         }
         .onDisappear {
+            if let pasteMonitor {
+                NSEvent.removeMonitor(pasteMonitor)
+                self.pasteMonitor = nil
+            }
             bridge.inlineApprovalActive = false
             assistant.draftText = inputText
         }
@@ -811,8 +818,12 @@ struct MacAssistantView: View {
                     .textFieldStyle(.plain)
                     .font(.body)
                     .lineLimit(2 ... 6)
+                    .focused($composerFocused)
                     .frame(minHeight: 40, alignment: .topLeading)
                     .onSubmit { sendCurrentInput() }
+                    .onPasteCommand(of: [.image, .png, .tiff, .fileURL]) { _ in
+                        pasteImage()
+                    }
                     .padding(.horizontal, 14)
                     .padding(.top, pendingImages.isEmpty ? 10 : 2)
 
@@ -956,6 +967,10 @@ struct MacAssistantView: View {
     }
 
     private func pasteImage() {
+        guard canAttachImages else {
+            imageError = String(localized: "Images need a remote AI provider.")
+            return
+        }
         guard let draft = AssistantImageProcessor.fromPasteboard() else {
             imageError = String(localized: "The clipboard has no image.")
             return
@@ -966,6 +981,22 @@ struct MacAssistantView: View {
         }
         pendingImages.append(draft)
         imageError = nil
+    }
+
+    /// ⌘V with an image on the clipboard attaches it instead of reaching the
+    /// text field, which would drop it. Text pastes normally.
+    private func installPasteMonitor() {
+        guard pasteMonitor == nil else { return }
+        pasteMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            guard composerFocused,
+                  flags == .command,
+                  event.charactersIgnoringModifiers?.lowercased() == "v",
+                  AssistantImageProcessor.pasteboardHasImage
+            else { return event }
+            pasteImage()
+            return nil
+        }
     }
 }
 
