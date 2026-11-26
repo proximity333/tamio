@@ -21,9 +21,6 @@ struct SidebarView: View {
     @ObservedObject var monitors = MonitorCenter.shared
     @ObservedObject var transfers = FileTransferManager.shared
 
-    /// TEMP: the Servers entry in the Manage group is hidden for now.
-    private static let showsServersEntry = false
-
     /// A place (Home, Servers…) or a server with open sessions. Selecting a
     /// server shows the tool it showed last; the toolbar switcher changes tools.
     enum Item: Hashable {
@@ -64,12 +61,10 @@ struct SidebarView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 place(.home, "Home", icon: .home)
+                place(.assistant, "Assistant", icon: .assistant)
 
                 SidebarHeader("Manage")
-                // TEMP: the Servers entry is hidden for now; flip this back to show it.
-                if Self.showsServersEntry {
-                    place(.servers, "Servers", icon: .servers, badge: store.machineGroup.count)
-                }
+                place(.servers, "Servers", icon: .servers, badge: store.machineGroup.count)
                 place(.identities, "Identities", icon: .identities, badge: store.identityGroup.shared.count)
                 place(.snippets, "Snippets", icon: .snippets, badge: store.snippetGroup.count)
                 place(.portForward, "Port Forward", icon: .portForward, badge: store.portForwardGroup.count)
@@ -233,6 +228,7 @@ extension View {
 /// icons (Lucide's, in TamioDesign), like every other icon in the app.
 enum SidebarIcon: String {
     case home = "house"
+    case assistant = "sparkles"
     case servers = "server.rack"
     case identities = "key"
     case snippets = "chevron.left.forwardslash.chevron.right"
