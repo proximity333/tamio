@@ -1416,10 +1416,13 @@ private struct MacAIProviderSettingsSheet: View {
                             Text("Context Token Budget").font(.subheadline)
                             Spacer()
                             Picker("", selection: $assistant.contextTokenBudget) {
-                                Text("32K").tag(32000)
-                                Text("64K").tag(64000)
+                                Text("32K").tag(32_000)
+                                Text("64K").tag(64_000)
                                 Text("128K").tag(128_000)
                                 Text("200K").tag(200_000)
+                                Text("256K").tag(256_000)
+                                Text("512K").tag(512_000)
+                                Text("1M").tag(1_000_000)
                             }
                             .labelsHidden()
                             .frame(width: 110)

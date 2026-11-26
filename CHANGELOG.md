@@ -13,6 +13,14 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.37] - 2026-11-26
+
+### Changed
+- **The AI assistant's context budget goes up to 1M tokens.** The assistant
+  settings offer 256K, 512K and 1M alongside the smaller budgets, so long
+  server sessions keep more of their history before earlier turns are
+  condensed.
+
 ## [0.2.36] - 2026-11-26
 
 ### Added
