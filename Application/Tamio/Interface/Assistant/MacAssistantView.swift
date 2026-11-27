@@ -1089,8 +1089,6 @@ private struct MacChatMessageRow: View {
     let onFork: () -> Void
     let onDelete: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
         switch message.role {
         case .user:
@@ -1119,18 +1117,17 @@ private struct MacChatMessageRow: View {
                             }
                     }
 
-                    if isHovered, canMutate {
-                        HStack(spacing: 6) {
-                            miniActionButton("doc.on.doc", help: "Copy") { copyText(message.text) }
-                            miniActionButton("pencil", help: "Edit & Resend", action: onEdit)
-                            miniActionButton("tuningfork", help: "Fork Conversation Here", action: onFork)
-                            miniActionButton("trash", help: "Delete", action: onDelete)
-                        }
-                        .transition(.opacity)
+                    HStack(spacing: 6) {
+                        miniActionButton("doc.on.doc", help: "Copy") { copyText(message.text) }
+                        miniActionButton("pencil", help: "Edit & Resend", action: onEdit)
+                            .disabled(!canMutate)
+                        miniActionButton("tuningfork", help: "Fork Conversation Here", action: onFork)
+                            .disabled(!canMutate)
+                        miniActionButton("trash", help: "Delete", action: onDelete)
+                            .disabled(!canMutate)
                     }
                 }
             }
-            .onHover { isHovered = $0 }
 
         case .assistant:
             VStack(alignment: .leading, spacing: 8) {
@@ -1146,23 +1143,22 @@ private struct MacChatMessageRow: View {
                             .foregroundStyle(.rxInkTertiary)
                     }
                     Spacer()
-                    if isHovered, canMutate {
-                        HStack(spacing: 6) {
-                            miniActionButton("doc.on.doc", help: "Copy") { copyText(message.text) }
-                            if isLastAssistant {
-                                miniActionButton("arrow.clockwise", help: "Regenerate", action: onRegenerate)
-                            }
-                            miniActionButton("tuningfork", help: "Fork Conversation Here", action: onFork)
-                            miniActionButton("trash", help: "Delete", action: onDelete)
+                    HStack(spacing: 6) {
+                        miniActionButton("doc.on.doc", help: "Copy") { copyText(message.text) }
+                        if isLastAssistant {
+                            miniActionButton("arrow.clockwise", help: "Regenerate", action: onRegenerate)
+                                .disabled(!canMutate)
                         }
-                        .transition(.opacity)
+                        miniActionButton("tuningfork", help: "Fork Conversation Here", action: onFork)
+                            .disabled(!canMutate)
+                        miniActionButton("trash", help: "Delete", action: onDelete)
+                            .disabled(!canMutate)
                     }
                 }
             }
             .padding(14)
             .rxCard()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .onHover { isHovered = $0 }
             .contextMenu {
                 Button { copyText(message.text) } label: { Label("Copy", systemImage: "doc.on.doc") }
                 if canMutate, isLastAssistant {

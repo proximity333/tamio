@@ -13,6 +13,13 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.42] - 2026-11-27
+
+### Changed
+- **The assistant's message actions are always visible.** Copy, regenerate,
+  fork and delete used to appear only under the pointer, which made a reply
+  card grow and shrink as the mouse moved over it.
+
 ## [0.2.41] - 2026-11-26
 
 ### Changed
