@@ -822,8 +822,6 @@ struct MacAssistantView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.top, 0)
                 }
 
                 TextField("Ask to check metrics, run batch commands, or manage servers…", text: $inputText, axis: .vertical)
@@ -836,14 +834,11 @@ struct MacAssistantView: View {
                     .onPasteCommand(of: [.image, .png, .tiff, .fileURL]) { _ in
                         pasteImage()
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.top, 0)
 
                 if let imageError {
                     Text(imageError)
                         .font(.caption)
                         .foregroundStyle(.red)
-                        .padding(.horizontal, 4)
                 }
 
                 HStack(alignment: .center, spacing: 8) {
@@ -911,10 +906,11 @@ struct MacAssistantView: View {
                     .disabled(!session.isStreaming && !canSend)
                 }
                 .frame(height: 30)
-                .padding(.horizontal, 4)
-                .padding(.bottom, 0)
             }
-            .rxCard(padding: 8)
+            .padding(.top, 12)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 10)
+            .rxCard(padding: 0)
             .frame(maxWidth: 820)
         }
         .padding(.horizontal, 18)

@@ -13,6 +13,12 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.45] - 2026-11-27
+
+### Changed
+- **The assistant's composer card has twelve-point padding.** Its sides and top
+  are twelve points, and the send row sits ten points above the bottom.
+
 ## [0.2.44] - 2026-11-27
 
 ### Changed
