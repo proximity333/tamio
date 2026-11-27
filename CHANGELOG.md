@@ -13,17 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
-### Changed
-- **The assistant's composer is tighter.** The card no longer adds its own
-  padding around the input, and the attach, scope and send controls share one
-  centre line.
-
-## [0.2.42] - 2026-11-27
+## [0.2.43] - 2026-11-27
 
 ### Changed
 - **The assistant's message actions are always visible.** Copy, regenerate,
   fork and delete used to appear only under the pointer, which made a reply
   card grow and shrink as the mouse moved over it.
+- **The assistant's composer is tighter.** The card no longer adds its own
+  padding around the input, the send row sits two points from the bottom, and
+  the attach, scope and send controls share one centre line.
 
 ## [0.2.41] - 2026-11-26
 
