@@ -13,6 +13,13 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.41] - 2026-11-26
+
+### Changed
+- **The assistant's send row sits closer to the input.** Its bottom padding is
+  two points, so the composer no longer carries extra space under the send
+  button.
+
 ## [0.2.40] - 2026-11-26
 
 ### Fixed

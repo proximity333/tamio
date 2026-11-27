@@ -897,7 +897,7 @@ struct MacAssistantView: View {
                 }
                 .frame(height: 30)
                 .padding(.horizontal, 12)
-                .padding(.bottom, 6)
+                .padding(.bottom, 2)
             }
             .rxCard()
             .frame(maxWidth: 820)
