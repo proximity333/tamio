@@ -835,38 +835,41 @@ struct MacAssistantView: View {
                 }
 
                 HStack(alignment: .center, spacing: 8) {
-                    Menu {
-                        Button("Choose Image…") { chooseImages() }
-                        Button("Paste Image") { pasteImage() }
-                    } label: {
-                        Image(systemName: "paperclip")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(canAttachImages ? Color.secondary : Color.secondary.opacity(0.4))
-                    }
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
-                    .disabled(!canAttachImages || isPreparingImages || room <= 0)
-                    .help(canAttachImages ? Text("Attach Image") : Text("Images need a remote AI provider."))
+                    HStack(alignment: .center, spacing: 8) {
+                        Menu {
+                            Button("Choose Image…") { chooseImages() }
+                            Button("Paste Image") { pasteImage() }
+                        } label: {
+                            Image(systemName: "paperclip")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(canAttachImages ? Color.secondary : Color.secondary.opacity(0.4))
+                        }
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                        .disabled(!canAttachImages || isPreparingImages || room <= 0)
+                        .help(canAttachImages ? Text("Attach Image") : Text("Images need a remote AI provider."))
 
-                    if isPreparingImages {
-                        ProgressView().controlSize(.mini)
-                    }
+                        if isPreparingImages {
+                            ProgressView().controlSize(.mini)
+                        }
 
-                    if !pendingImages.isEmpty {
-                        Text("\(pendingImages.count)/\(AssistantImageProcessor.maxImagesPerMessage)")
-                            .font(.caption2)
-                            .foregroundStyle(.rxInkSecondary)
-                    }
+                        if !pendingImages.isEmpty {
+                            Text("\(pendingImages.count)/\(AssistantImageProcessor.maxImagesPerMessage)")
+                                .font(.caption2)
+                                .foregroundStyle(.rxInkSecondary)
+                        }
 
-                    Text(String(localized: "\(assistant.resolvedScopedMachines(for: activeConversation.id).count) servers in scope"))
-                        .font(.caption)
-                        .foregroundStyle(.rxInkSecondary)
-
-                    if session.didPruneContext {
-                        Text("· Context trimmed")
+                        Text(String(localized: "\(assistant.resolvedScopedMachines(for: activeConversation.id).count) servers in scope"))
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(.rxInkSecondary)
+
+                        if session.didPruneContext {
+                            Text("· Context trimmed")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
                     }
+                    .frame(height: 30)
 
                     Spacer()
 
@@ -899,7 +902,7 @@ struct MacAssistantView: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 2)
             }
-            .rxCard()
+            .rxCard(padding: 0)
             .frame(maxWidth: 820)
         }
         .padding(.horizontal, 18)

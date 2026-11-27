@@ -13,6 +13,11 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **The assistant's composer is tighter.** The card no longer adds its own
+  padding around the input, and the attach, scope and send controls share one
+  centre line.
+
 ## [0.2.42] - 2026-11-27
 
 ### Changed
