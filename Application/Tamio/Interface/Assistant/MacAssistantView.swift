@@ -35,6 +35,7 @@ struct MacAssistantView: View {
     @State private var showHostScopePopover = false
     @State private var historySearch = ""
     @State private var pendingImages: [AssistantAttachmentDraft] = []
+    @State private var previewingImage: AssistantAttachmentDraft?
     @State private var imageError: String?
     @State private var isPreparingImages = false
     @State private var pasteMonitor: Any?
@@ -197,6 +198,11 @@ struct MacAssistantView: View {
                 }
                 .buttonStyle(.rxPrimary)
                 .disabled(editMessageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .sheet(item: $previewingImage) { draft in
+            MacImagePreviewSheet(draft: draft) {
+                previewingImage = nil
             }
         }
     }
@@ -804,14 +810,20 @@ struct MacAssistantView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(pendingImages) { draft in
-                                MacPendingImageChip(draft: draft) {
-                                    pendingImages.removeAll { $0.id == draft.id }
-                                }
+                                MacPendingImageChip(
+                                    draft: draft,
+                                    onRemove: {
+                                        pendingImages.removeAll { $0.id == draft.id }
+                                    },
+                                    onPreview: {
+                                        previewingImage = draft
+                                    }
+                                )
                             }
                         }
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.top, 10)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 0)
                 }
 
                 TextField("Ask to check metrics, run batch commands, or manage servers…", text: $inputText, axis: .vertical)
@@ -824,14 +836,14 @@ struct MacAssistantView: View {
                     .onPasteCommand(of: [.image, .png, .tiff, .fileURL]) { _ in
                         pasteImage()
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.top, pendingImages.isEmpty ? 10 : 2)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 0)
 
                 if let imageError {
                     Text(imageError)
                         .font(.caption)
                         .foregroundStyle(.red)
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, 4)
                 }
 
                 HStack(alignment: .center, spacing: 8) {
@@ -899,10 +911,10 @@ struct MacAssistantView: View {
                     .disabled(!session.isStreaming && !canSend)
                 }
                 .frame(height: 30)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 2)
+                .padding(.horizontal, 4)
+                .padding(.bottom, 0)
             }
-            .rxCard(padding: 0)
+            .rxCard(padding: 8)
             .frame(maxWidth: 820)
         }
         .padding(.horizontal, 18)
@@ -1076,6 +1088,46 @@ private struct MacHostScopePopover: View {
         }
         .padding(12)
         .frame(width: 280)
+    }
+}
+
+private struct MacImagePreviewSheet: View {
+    let draft: AssistantAttachmentDraft
+    let close: () -> Void
+
+    @State private var image: NSImage?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Text(draft.attachment.fileName)
+                    .font(.rxBodyStrong)
+                    .lineLimit(1)
+                Spacer()
+                Button("Done", action: close)
+                    .buttonStyle(.rxPrimary)
+            }
+            .padding(16)
+
+            Divider()
+
+            ZStack {
+                Color.primary.opacity(0.03)
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(16)
+                } else {
+                    ProgressView()
+                }
+            }
+            .frame(minHeight: 320)
+        }
+        .frame(width: 620, height: 480)
+        .onAppear {
+            image = NSImage(data: draft.data)
+        }
     }
 }
 
@@ -1879,22 +1931,28 @@ private struct MacOpsSkillsSheet: View {
 private struct MacPendingImageChip: View {
     let draft: AssistantAttachmentDraft
     let onRemove: () -> Void
+    let onPreview: () -> Void
 
     @State private var image: NSImage?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Group {
-                if let image {
-                    Image(nsImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Color.primary.opacity(0.06)
+            Button(action: onPreview) {
+                Group {
+                    if let image {
+                        Image(nsImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Color.primary.opacity(0.06)
+                    }
                 }
+                .frame(width: 64, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .contentShape(Rectangle())
             }
-            .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .buttonStyle(.plain)
+            .help(Text("Preview Image"))
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")

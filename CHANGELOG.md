@@ -13,6 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **The assistant's composer has padding around its whole edge again.** The
+  send row sits eight points above the bottom, level with the space beside the
+  input, instead of touching the card's edge.
+
+### Fixed
+- **A pending image opens a preview when clicked.** Before, a pasted or picked
+  image could only be sent or removed.
+
 ## [0.2.43] - 2026-11-27
 
 ### Changed
