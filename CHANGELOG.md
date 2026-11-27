@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.44] - 2026-11-27
+
 ### Changed
 - **The assistant's composer has padding around its whole edge again.** The
   send row sits eight points above the bottom, level with the space beside the
